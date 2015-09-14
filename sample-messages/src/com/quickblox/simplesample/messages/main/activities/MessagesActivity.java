@@ -106,7 +106,7 @@ public class MessagesActivity extends Activity {
         qbEvent.setMessage(messageOutEditText.getText().toString());
 
         StringifyArrayList<Integer> userIds = new StringifyArrayList<Integer>();
-        userIds.add(1243440);
+        userIds.add(2224038);
         qbEvent.setUserIds(userIds);
 
 

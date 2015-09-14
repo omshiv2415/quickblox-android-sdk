@@ -190,6 +190,7 @@ public class PlayServicesHelper {
 
             @Override
             public void onError(List<String> strings) {
+                Log.d(TAG, "Error subscribed");
 
             }
         });
