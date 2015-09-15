@@ -71,7 +71,7 @@ public class ReportAdapter extends BaseAdapter{
             holder.currentDateTV.setText(report.getDeliveryTime());
             holder.travelingDateTV.setText(report.getTravelingTime());
 
-            if (travelingTimeSecond > 10){
+            if (travelingTimeSecond > Consts.PUSH_TIMEOUT/1000){
                 convertView.setBackgroundResource(R.color.red_light);
             } else {
                 convertView.setBackgroundResource(R.color.green_light);

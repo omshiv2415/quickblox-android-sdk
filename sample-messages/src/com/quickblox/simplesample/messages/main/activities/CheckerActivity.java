@@ -6,12 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
-import android.text.format.DateUtils;
-import android.text.style.TtsSpan;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -33,7 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tereha on 15.09.15.
@@ -46,6 +45,7 @@ public class CheckerActivity extends Activity {
     private ArrayList<Report> listReports = new ArrayList<>();
     private ReportAdapter reportAdapter;
     private ProgressBar checkerPB;
+    private Thread t;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,12 +73,67 @@ public class CheckerActivity extends Activity {
 
 
     public void startChecker(View view) {
-        sendPushNotification();
+        checkerPB.setVisibility(View.VISIBLE);
 
+        final Handler handler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle bundle = msg.getData();
+                QBEvent qbEvent = (QBEvent) bundle.getSerializable(Consts.QBEVENT_EXTRAS);
+
+                QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
+                    @Override
+                    public void onSuccess(QBEvent qbEvent, Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onError(List<String> strings) {
+                        // errors
+                        DialogUtils.showLong(CheckerActivity.this, strings.toString());
+
+                    }
+                });
+            }
+        };
+
+        t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    do {
+                        // Send Push: create QuickBlox Push Notification Event
+                        QBEvent qbEvent = new QBEvent();
+                        qbEvent.setNotificationType(QBNotificationType.PUSH);
+                        qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
+
+                        // generic push - will be delivered to all platforms (Android, iOS, WP, Blackberry..)
+                        long currentTimeMillis = System.currentTimeMillis();
+                        qbEvent.setMessage(String.valueOf(currentTimeMillis));
+
+                        StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
+                        userIds.add(2224038);
+                        qbEvent.setUserIds(userIds);
+
+                        Message msg = handler.obtainMessage();
+                        Bundle bundle = new Bundle();
+                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, qbEvent);
+                        msg.setData(bundle);
+                        handler.sendMessage(msg);
+
+//                        sendPushNotification();
+                        TimeUnit.MILLISECONDS.sleep(Consts.PUSH_TIMEOUT);
+                    } while (Consts.PUSH_TIMEOUT > 0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        t.start();
     }
 
     private void sendPushNotification(){
-        checkerPB.setVisibility(View.VISIBLE);
+//        checkerPB.setVisibility(View.VISIBLE);
 
         // Send Push: create QuickBlox Push Notification Event
         QBEvent qbEvent = new QBEvent();
@@ -110,10 +165,10 @@ public class CheckerActivity extends Activity {
     }
 
 
+
     private BroadcastReceiver mPushReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             // Get extra data included in the Intent
             String message = intent.getStringExtra(Consts.EXTRA_MESSAGE);
 
@@ -144,11 +199,24 @@ public class CheckerActivity extends Activity {
         Report report = new Report (dateSendText, currentDateText, travelingDateText);
         listReports.add(report);
         reportAdapter.notifyDataSetChanged();
-        checkerPB.setVisibility(View.GONE);
     }
 
 
     public void stopChecker(View view) {
+        if (t != null) {
+            Thread dummy = t;
+            t = null;
+            dummy.interrupt();
+        }
+
         checkerPB.setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Unregister since the activity is about to be closed.
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
+
+        super.onDestroy();
     }
 }

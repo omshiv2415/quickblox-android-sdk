@@ -11,6 +11,6 @@
     <string name="stop_checker">Stop checker</string>
     <string name="send_time">Send time</string>
     <string name="delivery_time">Delivery time</string>
-    <string name="traveling_time">Traveling time \n(sec)</string>
+    <string name="traveling_time">Traveling time (sec)</string>
 
 </resources>

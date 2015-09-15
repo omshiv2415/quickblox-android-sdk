@@ -32,4 +32,8 @@ public class Consts {
     public static final String GCM_RECEIVED = "Received: ";
 
     public static final String NEW_PUSH_EVENT = "new-push-event";
+    public static final int PUSH_TIMEOUT = 10000;
+    public static final String QBEVENT_EXTRAS = "qbEventExtras";
+
+
 }
