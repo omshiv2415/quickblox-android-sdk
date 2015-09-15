@@ -6,4 +6,11 @@
     <string name="send">Send notification to yourself</string>
     <string name="received_messages">Received messages</string>
     <string name="no_messages">No messages</string>
+    <string name="open_checker">Open push notification checker</string>
+    <string name="start_checker">Start checker</string>
+    <string name="stop_checker">Stop checker</string>
+    <string name="send_time">Send time</string>
+    <string name="delivery_time">Delivery time</string>
+    <string name="traveling_time">Traveling time \n(sec)</string>
+
 </resources>

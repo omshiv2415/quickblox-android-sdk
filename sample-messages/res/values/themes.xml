@@ -23,6 +23,7 @@
         <item name="android:buttonStyleToggle">@style/ToggleAppTheme</item>
         <item name="android:listViewStyle">@style/ListViewAppTheme</item>
         <item name="android:spinnerItemStyle">@style/SpinnerItemAppTheme</item>
+        <item name="android:popupMenuStyle">@style/MyPopupMenu</item>
         <item name="android:actionBarStyle" tools:ignore="NewApi">@style/ActionBarAppTheme</item>
         <item name="android:actionBarItemBackground" tools:ignore="NewApi">@drawable/apptheme_selectable_background</item>
         <item name="android:actionBarTabStyle" tools:ignore="NewApi">@style/ActionBarTabViewAppTheme</item>

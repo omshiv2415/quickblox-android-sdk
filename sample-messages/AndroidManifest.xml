@@ -28,6 +28,9 @@
             android:name=".main.activities.MessagesActivity"
             android:screenOrientation="portrait" />
 
+        <activity android:name=".main.activities.CheckerActivity"
+            android:screenOrientation="portrait"/>
+
         <!-- GCM (Push Notifications) setup: http://developer.android.com/google/gcm/gs.html#android-app -->
 
         <!-- 1. Add the following broadcast receiver.

@@ -133,6 +133,10 @@
         <item name="android:background">@drawable/apptheme_tab_indicator_ab</item>
     </style>
 
+    <style name="MyPopupMenu" parent="android:style/Widget.Holo.Light.ListPopupWindow">
+        <item name="android:popupMenuStyle">@style/ButtonAppTheme</item>
+    </style>
+
     <style name="ActionButtonCloseModeAppTheme" parent="android:Widget.ActionButton.CloseMode">
         <item name="android:background">@drawable/apptheme_btn_cab_done</item>
     </style>
