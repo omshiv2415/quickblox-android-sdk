@@ -75,52 +75,25 @@ public class CheckerActivity extends Activity {
     public void startChecker(View view) {
         checkerPB.setVisibility(View.VISIBLE);
 
-        final Handler handler = new Handler(){
+        final Handler handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
                 Bundle bundle = msg.getData();
                 QBEvent qbEvent = (QBEvent) bundle.getSerializable(Consts.QBEVENT_EXTRAS);
-
-                QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
-                    @Override
-                    public void onSuccess(QBEvent qbEvent, Bundle bundle) {
-
-                    }
-
-                    @Override
-                    public void onError(List<String> strings) {
-                        // errors
-                        DialogUtils.showLong(CheckerActivity.this, strings.toString());
-
-                    }
-                });
+                sendPushNotification(qbEvent);
             }
+
         };
 
         t = new Thread(new Runnable() {
             public void run() {
                 try {
                     do {
-                        // Send Push: create QuickBlox Push Notification Event
-                        QBEvent qbEvent = new QBEvent();
-                        qbEvent.setNotificationType(QBNotificationType.PUSH);
-                        qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
-
-                        // generic push - will be delivered to all platforms (Android, iOS, WP, Blackberry..)
-                        long currentTimeMillis = System.currentTimeMillis();
-                        qbEvent.setMessage(String.valueOf(currentTimeMillis));
-
-                        StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
-                        userIds.add(2224038);
-                        qbEvent.setUserIds(userIds);
-
                         Message msg = handler.obtainMessage();
                         Bundle bundle = new Bundle();
-                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, qbEvent);
+                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, createPushNotificationEvent());
                         msg.setData(bundle);
                         handler.sendMessage(msg);
-
-//                        sendPushNotification();
                         TimeUnit.MILLISECONDS.sleep(Consts.PUSH_TIMEOUT);
                     } while (Consts.PUSH_TIMEOUT > 0);
                 } catch (InterruptedException e) {
@@ -128,14 +101,11 @@ public class CheckerActivity extends Activity {
                 }
             }
         });
-
         t.start();
     }
 
-    private void sendPushNotification(){
-//        checkerPB.setVisibility(View.VISIBLE);
-
-        // Send Push: create QuickBlox Push Notification Event
+    private QBEvent createPushNotificationEvent(){
+        //Create QuickBlox Push Notification Event
         QBEvent qbEvent = new QBEvent();
         qbEvent.setNotificationType(QBNotificationType.PUSH);
         qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
@@ -148,15 +118,20 @@ public class CheckerActivity extends Activity {
         userIds.add(2224038);
         qbEvent.setUserIds(userIds);
 
+        return qbEvent;
+    }
 
+    private void sendPushNotification(QBEvent qbEvent){
         QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
             @Override
             public void onSuccess(QBEvent qbEvent, Bundle bundle) {
+                Log.d(TAG, "pushSended");
 
             }
 
             @Override
             public void onError(List<String> strings) {
+                Log.d(TAG, "pushErrorSend");
                 // errors
                 DialogUtils.showLong(CheckerActivity.this, strings.toString());
 
