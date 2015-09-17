@@ -30,33 +30,44 @@ public class GCMIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Log.i(TAG, "new push");
 
-        Bundle extras = intent.getExtras();
+        intent.setAction(Consts.NEW_PUSH_EVENT);
+
+//        Intent intentNewPush = new Intent(intent);
+//            intentNewPush.putExtra(Consts.EXTRA_MESSAGE, messageValue);
+//            intentNewPush.putExtra(Consts.NEW_PUSH_BUNDLE, extras);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+//        Bundle extras = intent.getExtras();
         GoogleCloudMessaging googleCloudMessaging = GoogleCloudMessaging.getInstance(this);
         // The getMessageType() intent parameter must be the intent you received
         // in your BroadcastReceiver.
         String messageType = googleCloudMessaging.getMessageType(intent);
 
-        if (!extras.isEmpty()) {  // has effect of unparcelling Bundle
+//        if (!extras.isEmpty()) {  // has effect of unparcelling Bundle
+//            Intent intentNewPush = new Intent(intent);
+//            intentNewPush.putExtra(Consts.EXTRA_MESSAGE, messageValue);
+//            intentNewPush.putExtra(Consts.NEW_PUSH_BUNDLE, extras);
+//            LocalBroadcastManager.getInstance(this).sendBroadcast(intentNewPush);
             /*
              * Filter messages based on message type. Since it is likely that GCM
              * will be extended in the future with new message types, just ignore
              * any message types you're not interested in, or that you don't
              * recognize.
              */
-            if (GoogleCloudMessaging.
-                    MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
-                processNotification(Consts.GCM_SEND_ERROR, extras);
-            } else if (GoogleCloudMessaging.
-                    MESSAGE_TYPE_DELETED.equals(messageType)) {
-                processNotification(Consts.GCM_DELETED_MESSAGE, extras);
-                // If it's a regular GCM message, do some work.
-            } else if (GoogleCloudMessaging.
-                    MESSAGE_TYPE_MESSAGE.equals(messageType)) {
-                // Post notification of received message.
-                processNotification(Consts.GCM_RECEIVED, extras);
-                Log.i(TAG, "Received: " + extras.toString());
-            }
-        }
+//            if (GoogleCloudMessaging.
+//                    MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
+//                processNotification(Consts.GCM_SEND_ERROR, extras);
+//            } else if (GoogleCloudMessaging.
+//                    MESSAGE_TYPE_DELETED.equals(messageType)) {
+//                processNotification(Consts.GCM_DELETED_MESSAGE, extras);
+//                // If it's a regular GCM message, do some work.
+//            } else if (GoogleCloudMessaging.
+//                    MESSAGE_TYPE_MESSAGE.equals(messageType)) {
+//                // Post notification of received message.
+//                processNotification(Consts.GCM_RECEIVED, extras);
+//                Log.i(TAG, "Received: " + extras.toString());
+//            }
+//        }
         // Release the wake lock provided by the WakefulBroadcastReceiver.
         GcmBroadcastReceiver.completeWakefulIntent(intent);
     }

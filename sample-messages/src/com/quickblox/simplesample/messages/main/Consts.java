@@ -24,6 +24,9 @@ public class Consts {
     public static final String PROJECT_NUMBER = "287747642439";
 
     public static final String EXTRA_MESSAGE = "message";
+    public static final String EXTRA_PUSH_ID = "id";
+    public static final String EXTRA_DATE = "date";
+    public static final String EXTRA_SERVER_TITLE = "serverTitle";
 
     public static final String GCM_NOTIFICATION = "GCM Notification";
     public static final String GCM_DELETED_MESSAGE = "Deleted messages on server: ";
@@ -34,6 +37,7 @@ public class Consts {
     public static final String NEW_PUSH_EVENT = "new-push-event";
     public static final int PUSH_TIMEOUT = 10000;
     public static final String QBEVENT_EXTRAS = "qbEventExtras";
+    public static final String NEW_PUSH_BUNDLE = "newPushBundle";
 
 
 }

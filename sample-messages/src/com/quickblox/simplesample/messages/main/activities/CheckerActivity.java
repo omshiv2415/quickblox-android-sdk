@@ -15,22 +15,35 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
+import com.google.gson.Gson;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.helper.StringifyArrayList;
 import com.quickblox.messages.QBMessages;
 import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBEvent;
 import com.quickblox.messages.model.QBNotificationType;
+import com.quickblox.messages.model.QBPushType;
 import com.quickblox.simplesample.messages.R;
 import com.quickblox.simplesample.messages.main.Consts;
 import com.quickblox.simplesample.messages.main.ReportAdapter;
 import com.quickblox.simplesample.messages.main.helper.PlayServicesHelper;
+import com.quickblox.simplesample.messages.main.models.Credentials;
 import com.quickblox.simplesample.messages.main.models.Report;
 import com.quickblox.simplesample.messages.main.utils.DialogUtils;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -75,6 +88,7 @@ public class CheckerActivity extends Activity {
     public void startChecker(View view) {
         checkerPB.setVisibility(View.VISIBLE);
 
+
         final Handler handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
@@ -87,21 +101,51 @@ public class CheckerActivity extends Activity {
 
         t = new Thread(new Runnable() {
             public void run() {
-                try {
-                    do {
-                        Message msg = handler.obtainMessage();
-                        Bundle bundle = new Bundle();
-                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, createPushNotificationEvent());
-                        msg.setData(bundle);
-                        handler.sendMessage(msg);
-                        TimeUnit.MILLISECONDS.sleep(Consts.PUSH_TIMEOUT);
-                    } while (Consts.PUSH_TIMEOUT > 0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                loadServersData();
+//                try {
+//                    do {
+//                        Message msg = handler.obtainMessage();
+//                        Bundle bundle = new Bundle();
+//                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, createPushNotificationEvent());
+//                        msg.setData(bundle);
+//                        handler.sendMessage(msg);
+//                        TimeUnit.MILLISECONDS.sleep(Consts.PUSH_TIMEOUT);
+//                    } while (Consts.PUSH_TIMEOUT > 0);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
             }
         });
         t.start();
+    }
+
+    public void loadServersData() {
+        HttpClient client = new DefaultHttpClient();
+        HttpGet request = new HttpGet("http://status.quickblox.com/admin/push/instances");
+
+        try {
+            HttpResponse response = client.execute(request);
+            HttpEntity entity = response.getEntity();
+
+            //
+            // Read the contents of an entity and return it as a String.
+            //
+            String content = EntityUtils.toString(entity);
+            Log.d(TAG, "content.length() = " + content.length());
+
+            Gson gson = new Gson();
+
+            Credentials credentials = gson.fromJson(content, Credentials.class);
+
+            if (credentials != null){
+                credentials.getAppId();
+                Log.d(TAG, "credentials.getAppId() = " + credentials.getAppId());
+            } else {
+                Log.d(TAG, "credentials.getAppId() = " + null);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private QBEvent createPushNotificationEvent(){
@@ -109,10 +153,18 @@ public class CheckerActivity extends Activity {
         QBEvent qbEvent = new QBEvent();
         qbEvent.setNotificationType(QBNotificationType.PUSH);
         qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
+        qbEvent.setPushType(QBPushType.GCM);
 
         // generic push - will be delivered to all platforms (Android, iOS, WP, Blackberry..)
         long currentTimeMillis = System.currentTimeMillis();
-        qbEvent.setMessage(String.valueOf(currentTimeMillis));
+
+        HashMap<String, String> data = new HashMap<>();
+        data.put("data." + Consts.EXTRA_MESSAGE, "");
+        data.put("data." + Consts.EXTRA_PUSH_ID, "id");
+        data.put("data." + Consts.EXTRA_DATE, String.valueOf(currentTimeMillis));
+        data.put("data." + Consts.EXTRA_SERVER_TITLE, "title");
+
+        qbEvent.setMessage(data);
 
         StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
         userIds.add(2224038);
@@ -144,13 +196,22 @@ public class CheckerActivity extends Activity {
     private BroadcastReceiver mPushReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // Get extra data included in the Intent
+            Log.d(TAG, "new broadcast message ");
             String message = intent.getStringExtra(Consts.EXTRA_MESSAGE);
+            String date = intent.getStringExtra("date");
+            String serverTitle = intent.getStringExtra("serverTitle");
+//            Log.d(TAG, "message: " + message + "\ndata.date: " + date + "\ndata.serverTitle: " + serverTitle + "\n");
+
+            for(String key : intent.getExtras().keySet()){
+                Log.d(TAG, key + ": " /*+ intent.getExtras().getString(key)*/);
+            }
+//            Log.d(TAG, intent.getExtras().keySet());
 
             if (message != null) {
-                processingMessage(message);
+//                processingMessage(message);
             }
         }
+
     };
 
     private void processingMessage(String message){
@@ -167,7 +228,8 @@ public class CheckerActivity extends Activity {
         String dateSendText = df2.format(dateSend);
         String currentDateText = df2.format(currentDate);
         String travelingDateText = String.valueOf((currentTimeMillis - timeFromMessage)/1000);
-        Log.d(TAG, "\n dateSend = " + dateSendText
+        Log.d(TAG, "\n"
+                + "\ndateSend = " + dateSendText
                 + "\n" + "currentDateText = " + currentDateText
                 + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) / 1000 + " sec");
 
