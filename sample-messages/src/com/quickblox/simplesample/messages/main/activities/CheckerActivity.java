@@ -15,7 +15,10 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
-import com.google.gson.Gson;
+import com.qb.gson.JsonArray;
+import com.qb.gson.JsonElement;
+import com.qb.gson.JsonObject;
+import com.qb.gson.JsonParser;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.helper.StringifyArrayList;
 import com.quickblox.messages.QBMessages;
@@ -37,7 +40,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -45,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tereha on 15.09.15.
@@ -120,29 +121,37 @@ public class CheckerActivity extends Activity {
     }
 
     public void loadServersData() {
+        ArrayList <Credentials> credentialsList = new ArrayList<>();
+
         HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet("http://status.quickblox.com/admin/push/instances");
+        HttpGet request = new HttpGet(Consts.INSTANCES_WEB_RESOURCE);
 
         try {
             HttpResponse response = client.execute(request);
             HttpEntity entity = response.getEntity();
 
-            //
-            // Read the contents of an entity and return it as a String.
-            //
             String content = EntityUtils.toString(entity);
-            Log.d(TAG, "content.length() = " + content.length());
 
-            Gson gson = new Gson();
+            JsonParser parser = new JsonParser();
+            JsonArray mainObject = parser.parse(content).getAsJsonArray();
 
-            Credentials credentials = gson.fromJson(content, Credentials.class);
+            for (JsonElement instance : mainObject) {
+                JsonObject instanceObject = instance.getAsJsonObject();
 
-            if (credentials != null){
-                credentials.getAppId();
-                Log.d(TAG, "credentials.getAppId() = " + credentials.getAppId());
-            } else {
-                Log.d(TAG, "credentials.getAppId() = " + null);
+                Credentials credentials = new Credentials();
+                credentials.setTitle(instanceObject.get(Consts.INSTANCES_TITLE).getAsString());
+                credentials.setAppId(instanceObject.get(Consts.INSTANCES_APP_ID).getAsString());
+                credentials.setAuthKey(instanceObject.get(Consts.INSTANCES_AUTH_KEY).getAsString());
+                credentials.setAuthSecret(instanceObject.get(Consts.INSTANCES_AUTH_SECRET).getAsString());
+                credentials.setUserLogin(instanceObject.get(Consts.INSTANCES_USER_LOGIN).getAsString());
+                credentials.setUserID(instanceObject.get(Consts.INSTANCES_USER_ID).getAsString());
+                credentials.setUserPass(instanceObject.get(Consts.INSTANCES_USER_PASSWORD).getAsString());
+                credentials.setServerApiDomain(instanceObject.get(Consts.INSTANCES_SERVER_API_DOMAIN).getAsString());
+
+                credentialsList.add(credentials);
             }
+
+            Log.d(TAG, "credentialsList.size() = " + credentialsList.size());
         } catch (IOException e) {
             e.printStackTrace();
         }

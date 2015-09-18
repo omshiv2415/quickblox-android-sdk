@@ -1,9 +1,14 @@
 package com.quickblox.simplesample.messages.main.models;
 
+import com.qb.gson.annotations.SerializedName;
+
 /**
  * Created by tereha on 17.09.15.
  */
 public class Credentials {
+
+//    @SerializedName("instances")
+//    private String instances;
 
 
     private String title;

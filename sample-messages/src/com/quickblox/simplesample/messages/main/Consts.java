@@ -28,6 +28,18 @@ public class Consts {
     public static final String EXTRA_DATE = "date";
     public static final String EXTRA_SERVER_TITLE = "serverTitle";
 
+
+    public static final String INSTANCES_WEB_RESOURCE = "http://status.quickblox.com/admin/push/instances";
+    public static final String INSTANCES_TITLE = "title";
+    public static final String INSTANCES_APP_ID = "appId";
+    public static final String INSTANCES_AUTH_KEY = "authKey";
+    public static final String INSTANCES_AUTH_SECRET = "authSecret";
+    public static final String INSTANCES_USER_LOGIN = "userLogin";
+    public static final String INSTANCES_USER_ID = "userID";
+    public static final String INSTANCES_USER_PASSWORD = "userPass";
+    public static final String INSTANCES_SERVER_API_DOMAIN = "serverApiDomain";
+
+
     public static final String GCM_NOTIFICATION = "GCM Notification";
     public static final String GCM_DELETED_MESSAGE = "Deleted messages on server: ";
     public static final String GCM_INTENT_SERVICE = "GcmIntentService";
