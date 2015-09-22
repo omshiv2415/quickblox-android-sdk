@@ -10,7 +10,7 @@ public class Credentials {
 
 
     private String title;
-    private String appId;
+    private Integer appId;
     private String authKey;
     private String authSecret;
     private String userLogin;
@@ -29,11 +29,11 @@ public class Credentials {
         this.title = title;
     }
 
-    public String getAppId() {
+    public Integer getAppId() {
         return appId;
     }
 
-    public void setAppId(String appId) {
+    public void setAppId(Integer appId) {
         this.appId = appId;
     }
 

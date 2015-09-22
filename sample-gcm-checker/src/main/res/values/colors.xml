@@ -9,4 +9,7 @@
     <color name="blue_highlight">#990073b9</color>
     <color name="red_light">#ED5460</color>
     <color name="green_light">#54ED6B</color>
+    <color name="red">#FF0000</color>
+    <color name="yellow">#FFD700</color>
+
 </resources>

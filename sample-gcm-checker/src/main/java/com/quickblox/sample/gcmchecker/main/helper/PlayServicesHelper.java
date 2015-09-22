@@ -19,8 +19,6 @@ import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBSubscription;
 import com.quickblox.sample.gcmchecker.App;
 import com.quickblox.sample.gcmchecker.main.Consts;
-import com.quickblox.sample.gcmchecker.main.activities.CheckerActivity;
-
 
 import java.io.IOException;
 import java.util.ArrayList;

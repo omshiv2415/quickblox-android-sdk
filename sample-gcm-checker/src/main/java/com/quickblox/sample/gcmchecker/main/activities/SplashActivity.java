@@ -89,7 +89,7 @@ public class SplashActivity extends Activity{
 
                 Credentials credentials = new Credentials();
                 credentials.setTitle(instanceObject.get(Consts.INSTANCES_TITLE).getAsString());
-                credentials.setAppId(instanceObject.get(Consts.INSTANCES_APP_ID).getAsString());
+                credentials.setAppId(instanceObject.get(Consts.INSTANCES_APP_ID).getAsInt());
                 credentials.setAuthKey(instanceObject.get(Consts.INSTANCES_AUTH_KEY).getAsString());
                 credentials.setAuthSecret(instanceObject.get(Consts.INSTANCES_AUTH_SECRET).getAsString());
                 credentials.setUserLogin(instanceObject.get(Consts.INSTANCES_USER_LOGIN).getAsString());

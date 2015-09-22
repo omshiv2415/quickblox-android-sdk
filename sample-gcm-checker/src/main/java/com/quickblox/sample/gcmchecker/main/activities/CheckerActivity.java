@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
@@ -18,13 +17,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.qb.gson.JsonArray;
-import com.qb.gson.JsonElement;
-import com.qb.gson.JsonObject;
-import com.qb.gson.JsonParser;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.auth.model.QBSession;
 import com.quickblox.core.QBEntityCallbackImpl;
@@ -45,12 +38,7 @@ import com.quickblox.sample.gcmchecker.main.models.Report;
 import com.quickblox.sample.gcmchecker.main.utils.DialogUtils;
 import com.quickblox.users.model.QBUser;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -71,6 +59,11 @@ public class CheckerActivity extends Activity {
     private ReportAdapter reportAdapter;
     private ProgressBar checkerPB;
     private Thread t;
+    private GoogleCloudMessaging googleCloudMessaging;
+    private String regId;
+    private Credentials currentCredentials;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,17 +90,38 @@ public class CheckerActivity extends Activity {
         messagesList.setAdapter(reportAdapter);
     }
 
+    public Credentials getCurrentCredentials() {
+        return currentCredentials;
+    }
+
+    public void setCurrentCredentials(Credentials currentCredentials) {
+        this.currentCredentials = currentCredentials;
+    }
 
     public void startChecker(View view) {
         checkerPB.setVisibility(View.VISIBLE);
-        Credentials credentials = SplashActivity.credentialsList.get(5);
-        initApp(credentials.getAppId(),
-                credentials.getAuthKey(),
-                credentials.getAuthSecret(),
-                credentials.getServerApiDomain());
-        createSession(Integer.parseInt(credentials.getUserID()),
-                credentials.getUserLogin(),
-                credentials.getUserPass());
+//        Credentials credentials = SplashActivity.credentialsList.get(16);
+//        setCurrentCredentials(credentials);
+//        Credentials currentCredentials = getCurrentCredentials();
+//        initApp(currentCredentials.getAppId(),
+//                currentCredentials.getAuthKey(),
+//                currentCredentials.getAuthSecret(),
+//                currentCredentials.getServerApiDomain());
+//        createSession(Integer.parseInt(currentCredentials.getUserID()),
+//                currentCredentials.getUserLogin(),
+//                currentCredentials.getUserPass());
+
+        initApp(Consts.APP_ID,
+                Consts.AUTH_KEY,
+                Consts.AUTH_SECRET,
+                null);
+        createSession(2224038,
+                Consts.USER_LOGIN,
+                Consts.USER_PASSWORD);
+        Credentials credentials = new Credentials();
+        credentials.setUserID("2224038");
+        credentials.setTitle("starter");
+        setCurrentCredentials(credentials);
 
 
 
@@ -149,64 +163,27 @@ public class CheckerActivity extends Activity {
 //        t.start();
     }
 
-    public void loadServersData() {
-        ArrayList <Credentials> credentialsList = new ArrayList<>();
-
-        HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet(Consts.INSTANCES_WEB_RESOURCE);
-
-        try {
-            HttpResponse response = client.execute(request);
-            HttpEntity entity = response.getEntity();
-
-            String content = EntityUtils.toString(entity);
-
-            JsonParser parser = new JsonParser();
-            JsonArray mainObject = parser.parse(content).getAsJsonArray();
-
-            for (JsonElement instance : mainObject) {
-                JsonObject instanceObject = instance.getAsJsonObject();
-
-                Credentials credentials = new Credentials();
-                credentials.setTitle(instanceObject.get(Consts.INSTANCES_TITLE).getAsString());
-                credentials.setAppId(instanceObject.get(Consts.INSTANCES_APP_ID).getAsString());
-                credentials.setAuthKey(instanceObject.get(Consts.INSTANCES_AUTH_KEY).getAsString());
-                credentials.setAuthSecret(instanceObject.get(Consts.INSTANCES_AUTH_SECRET).getAsString());
-                credentials.setUserLogin(instanceObject.get(Consts.INSTANCES_USER_LOGIN).getAsString());
-                credentials.setUserID(instanceObject.get(Consts.INSTANCES_USER_ID).getAsString());
-                credentials.setUserPass(instanceObject.get(Consts.INSTANCES_USER_PASSWORD).getAsString());
-                credentials.setServerApiDomain(instanceObject.get(Consts.INSTANCES_SERVER_API_DOMAIN).getAsString());
-
-                credentialsList.add(credentials);
-            }
-
-            Log.d(TAG, "credentialsList.size() = " + credentialsList.size());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public QBEvent createPushNotificationEvent(Integer userId){
-        //Create QuickBlox Push Notification Event
+    public QBEvent createPushNotificationEvent(){
         QBEvent qbEvent = new QBEvent();
         qbEvent.setNotificationType(QBNotificationType.PUSH);
         qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
-        qbEvent.setPushType(QBPushType.GCM);
 
-        // generic push - will be delivered to all platforms (Android, iOS, WP, Blackberry..)
         long currentTimeMillis = System.currentTimeMillis();
 
-        HashMap<String, String> data = new HashMap<>();
-        data.put("data." + Consts.EXTRA_MESSAGE, "");
-        data.put("data." + Consts.EXTRA_PUSH_ID, "id");
-        data.put("data." + Consts.EXTRA_DATE, String.valueOf(currentTimeMillis));
-        data.put("data." + Consts.EXTRA_SERVER_TITLE, "title");
+        JSONObject json = new JSONObject();
+        try {
+            json.put(Consts.EXTRA_MESSAGE, "");
+            json.put(Consts.EXTRA_PUSH_ID, "id");
+            json.put(Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
+            json.put(Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        qbEvent.setMessage(data);
-//        qbEvent.setMessage(String.valueOf(currentTimeMillis));
+        qbEvent.setMessage(json.toString());
 
         StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
-        userIds.add(userId);
+        userIds.add(Integer.parseInt(getCurrentCredentials().getUserID()));
         qbEvent.setUserIds(userIds);
 
         return qbEvent;
@@ -238,26 +215,23 @@ public class CheckerActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "new broadcast message ");
-            String message = intent.getStringExtra(Consts.EXTRA_MESSAGE);
-            String date = intent.getStringExtra("date");
-            String serverTitle = intent.getStringExtra("serverTitle");
-//            Log.d(TAG, "message: " + message + "\ndata.date: " + date + "\ndata.serverTitle: " + serverTitle + "\n");
+            Report report = new Report();
+            report.setSendDate(intent.getExtras().getString(Consts.EXTRA_SEND_DATE));
+            report.setDeliveryDate(intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE));
+            report.setServerTitle(intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE));
 
-            for(String key : intent.getExtras().keySet()){
-                Log.d(TAG, key + ": " /*+ intent.getExtras().getString(key)*/);
-            }
-//            Log.d(TAG, intent.getExtras().keySet());
+//            for (String key : intent.getExtras().keySet()){
+//                Log.d(TAG, key + ": " + intent.getExtras().get(key));
+//            }
 
-            if (message != null) {
-//                processingMessage(message);
-            }
+            processingMessage(report);
         }
 
     };
 
-    private void processingMessage(String message){
-        long timeFromMessage = Long.parseLong(message);
-        long currentTimeMillis = System.currentTimeMillis();
+    private void processingMessage(Report report){
+        long timeFromMessage = Long.parseLong(report.getSendDate());
+        long currentTimeMillis = Long.parseLong(report.getDeliveryDate());
         Date dateSend = new Date (timeFromMessage);
         Date currentDate = new Date (currentTimeMillis);
 //                "yyyy-MM-dd",
@@ -274,9 +248,11 @@ public class CheckerActivity extends Activity {
                 + "\n" + "currentDateText = " + currentDateText
                 + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) / 1000 + " sec");
 
-        Report report = new Report (dateSendText, currentDateText, travelingDateText);
-        listReports.add(report);
+        Report report1 = new Report (dateSendText, currentDateText, travelingDateText);
+        report1.setServerTitle(report.getServerTitle());
+        listReports.add(report1);
         reportAdapter.notifyDataSetChanged();
+
     }
 
 
@@ -298,7 +274,7 @@ public class CheckerActivity extends Activity {
         super.onDestroy();
     }
 
-    private void initApp (String appId, String authKey, String authSecret, String serverApiDomain){
+    private void initApp (Integer appId, String authKey, String authSecret, String serverApiDomain){
         if (serverApiDomain != null) {
             if (serverApiDomain.contains("https://")){
                 StringBuilder stringBuilder = new StringBuilder(serverApiDomain);
@@ -307,7 +283,7 @@ public class CheckerActivity extends Activity {
             }
             QBSettings.getInstance().setServerApiDomain(serverApiDomain);
         }
-        QBSettings.getInstance().fastConfigInit(appId, authKey, authSecret);
+        QBSettings.getInstance().fastConfigInit(appId.toString(), authKey, authSecret);
     }
 
     private void createSession (final Integer userId, String userLogin, String userPass) {
@@ -333,43 +309,58 @@ public class CheckerActivity extends Activity {
 
     private void subscribeToPushNotifications(final Integer userId) {
         Log.d(TAG, "subscribing...");
-
-        GoogleCloudMessaging googleCloudMessaging = GoogleCloudMessaging.getInstance(this);
-        String regId = null;
-        try {
-            regId = googleCloudMessaging.register(Consts.PROJECT_NUMBER);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        String deviceId;
-
-        final TelephonyManager mTelephony = (TelephonyManager) getSystemService(
-                Context.TELEPHONY_SERVICE);
-        if (mTelephony.getDeviceId() != null) {
-            deviceId = mTelephony.getDeviceId(); //*** use for mobiles
-        } else {
-            deviceId = Settings.Secure.getString(getContentResolver(),
-                    Settings.Secure.ANDROID_ID); //*** use for tablets
-        }
-
-        QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT, new QBEntityCallbackImpl<ArrayList<QBSubscription>>() {
+        new AsyncTask<Void, Void, String>() {
             @Override
-            public void onSuccess(ArrayList<QBSubscription> subscriptions, Bundle args) {
-                Log.d(TAG, "subscribed");
-                sendPushNotification(createPushNotificationEvent(userId));
-            }
+            protected String doInBackground(Void... params) {
+                String msg = "";
+                try {
+                    if (googleCloudMessaging == null) {
+                        googleCloudMessaging = GoogleCloudMessaging.getInstance(CheckerActivity.this);
+                    }
+                    regId = googleCloudMessaging.register(Consts.PROJECT_NUMBER);
+                    msg = "Device registered, registration ID=" + regId;
 
-            @Override
-            public void onError(List<String> errors) {
-                for (String s : errors){
-                    Log.d(TAG, "Error subscribing " + s);
+                    Handler h = new Handler(getMainLooper());
+                    h.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            String deviceId;
+
+                            final TelephonyManager mTelephony = (TelephonyManager) getSystemService(
+                                    Context.TELEPHONY_SERVICE);
+                            if (mTelephony.getDeviceId() != null) {
+                                deviceId = mTelephony.getDeviceId(); //*** use for mobiles
+                            } else {
+                                deviceId = Settings.Secure.getString(getContentResolver(),
+                                        Settings.Secure.ANDROID_ID); //*** use for tablets
+                            }
+
+                            QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT, new QBEntityCallbackImpl<ArrayList<QBSubscription>>() {
+                                @Override
+                                public void onSuccess(ArrayList<QBSubscription> subscriptions, Bundle args) {
+                                    Log.d(TAG, "subscribed");
+                                    sendPushNotification(createPushNotificationEvent());
+                                }
+
+                                @Override
+                                public void onError(List<String> errors) {
+                                    for (String s : errors){
+                                        Log.d(TAG, "Error subscribing " + s);
+                                    }
+
+                                }
+                            });
+                        }
+                    });
+                } catch (IOException ex) {
+                    msg = "Error :" + ex.getMessage();
                 }
-
+                return msg;
             }
-        });
-
+            @Override
+            protected void onPostExecute(String msg) {
+                Log.i(TAG, msg + "\n");
+            }
+        }.execute(null, null, null);
     }
-
-
 }

@@ -47,11 +47,12 @@ public class ReportAdapter extends BaseAdapter{
         final ViewHolder holder;
 
         if (convertView == null) {
-            convertView = inflater.inflate(R.layout.item_time_report, null);
+            convertView = inflater.inflate(R.layout.item_report, null);
             holder = new ViewHolder();
-            holder.dateSendTV = (TextView) convertView.findViewById(R.id.sendTimeTV);
-            holder.currentDateTV = (TextView) convertView.findViewById(R.id.deliveryTimeTV);
-            holder.travelingDateTV = (TextView) convertView.findViewById(R.id.trevelingTimeTV);
+            holder.sendResultTV = (TextView) convertView.findViewById(R.id.sendTimeTV);
+            holder.serverTitleTV = (TextView) convertView.findViewById(R.id.serverTitleTV);
+            holder.statusOvalTV = (TextView) convertView.findViewById(R.id.statusOvalTV);
+            holder.deliveryTimeTV = (TextView) convertView.findViewById(R.id.deliveryTimeTV);
 
             convertView.setTag(holder);
 
@@ -63,15 +64,18 @@ public class ReportAdapter extends BaseAdapter{
 
 
         if (report != null) {
-            int travelingTimeSecond = Integer.parseInt(report.getTravelingTime());
-            holder.dateSendTV.setText(report.getSendTime());
-            holder.currentDateTV.setText(report.getDeliveryTime());
-            holder.travelingDateTV.setText(report.getTravelingTime());
+            holder.serverTitleTV.setText(report.getServerTitle());
+            holder.deliveryTimeTV.setText(report.getDeliveryDate());
 
-            if (travelingTimeSecond > Consts.PUSH_TIMEOUT/1000){
-//                convertView.setBackgroundResource(R.color.);
+            if (report.getTravelingTime()!= null){
+            int travelingTimeSecond = Integer.parseInt(report.getTravelingTime());
+                if (travelingTimeSecond > Consts.PUSH_TIMEOUT/1000) {
+                    holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_yellow);
+                } else if (travelingTimeSecond <= Consts.PUSH_TIMEOUT/1000) {
+                    holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_green);
+                }
             } else {
-//                convertView.setBackgroundResource(R.color.green_light);
+                holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_red);
             }
         }
 
@@ -79,8 +83,9 @@ public class ReportAdapter extends BaseAdapter{
     }
 
     public static class ViewHolder {
-        TextView dateSendTV;
-        TextView currentDateTV;
-        TextView travelingDateTV;
+        TextView sendResultTV;
+        TextView serverTitleTV;
+        TextView statusOvalTV;
+        TextView deliveryTimeTV;
     }
 }

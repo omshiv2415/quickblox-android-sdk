@@ -4,31 +4,34 @@ package com.quickblox.sample.gcmchecker.main.models;
  * Created by tereha on 15.09.15.
  */
 public class Report {
-    private String sendTime;
-    private String deliveryTime;
+    private String sendDate;
+    private String deliveryDate;
     private String travelingTime;
+    private String serverTitle;
 
-
-    public Report(String sendTime, String deliveryTime, String travelingTime){
-        this.sendTime = sendTime;
-        this.deliveryTime = deliveryTime;
+    public Report(String sendDate, String deliveryDate, String travelingTime){
+        this.sendDate = sendDate;
+        this.deliveryDate = deliveryDate;
         this.travelingTime = travelingTime;
     }
 
-    public String getSendTime() {
-        return sendTime;
+    public Report (){
     }
 
-    public void setSendTime(String sendTime) {
-        this.sendTime = sendTime;
+    public String getSendDate() {
+        return sendDate;
     }
 
-    public String getDeliveryTime() {
-        return deliveryTime;
+    public void setSendDate(String sendDate) {
+        this.sendDate = sendDate;
     }
 
-    public void setDeliveryTime(String deliveryTime) {
-        this.deliveryTime = deliveryTime;
+    public String getDeliveryDate() {
+        return deliveryDate;
+    }
+
+    public void setDeliveryDate(String deliveryDate) {
+        this.deliveryDate = deliveryDate;
     }
 
     public String getTravelingTime() {
@@ -37,5 +40,13 @@ public class Report {
 
     public void setTravelingTime(String travelingTime) {
         this.travelingTime = travelingTime;
+    }
+
+    public String getServerTitle() {
+        return serverTitle;
+    }
+
+    public void setServerTitle(String serverTitle) {
+        this.serverTitle = serverTitle;
     }
 }

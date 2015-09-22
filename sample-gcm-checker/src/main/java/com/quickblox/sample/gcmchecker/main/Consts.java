@@ -26,7 +26,8 @@ public class Consts {
 
     public static final String EXTRA_MESSAGE = "message";
     public static final String EXTRA_PUSH_ID = "id";
-    public static final String EXTRA_DATE = "date";
+    public static final String EXTRA_DELIVERY_DATE = "deliveryDate";
+    public static final String EXTRA_SEND_DATE = "sendDate";
     public static final String EXTRA_SERVER_TITLE = "serverTitle";
 
 
@@ -51,6 +52,7 @@ public class Consts {
     public static final int PUSH_TIMEOUT = 10000;
     public static final String QBEVENT_EXTRAS = "qbEventExtras";
     public static final String NEW_PUSH_BUNDLE = "newPushBundle";
+
 
 
 }
