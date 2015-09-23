@@ -3,28 +3,16 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:padding="5dp">
 
     <TextView
         android:id="@+id/sendResultTV"
-        android:layout_width="wrap_content"
+        android:layout_width="60dp"
         android:layout_height="wrap_content"
         android:text="1/1"
         android:textColor="@android:color/black"
         android:textSize="8pt"
-        android:padding="5dp"
-        android:layout_weight="0.5"
-        android:gravity="center_horizontal"/>
-
-    <TextView
-        android:id="@+id/serverTitleTV"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="server_title"
-        android:textColor="@android:color/black"
-        android:textSize="8pt"
-        android:padding="5dp"
         android:gravity="center_horizontal"/>
 
     <TextView
@@ -32,9 +20,18 @@
         android:layout_width="25dp"
         android:layout_height="25dp"
         android:background="@drawable/shape_oval_gray"
-        android:textSize="8pt"
-        android:gravity="center_horizontal"
         />
+
+    <TextView
+        android:id="@+id/serverTitleTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="server_title"
+        android:textColor="@android:color/black"
+        android:textSize="8pt"
+        android:maxLines="1"
+        android:gravity="left"
+        android:paddingLeft="5dp"/>
 
     <TextView
         android:id="@+id/deliveryTimeTV"
@@ -44,7 +41,6 @@
         android:text="16:59:52.455"
         android:textColor="@android:color/black"
         android:textSize="8pt"
-        android:padding="5dp"
-        android:gravity="center_horizontal"/>
+        android:gravity="right"/>
 
 </LinearLayout>

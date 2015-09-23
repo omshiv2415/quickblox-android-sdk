@@ -20,19 +20,24 @@ import android.widget.ProgressBar;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.auth.model.QBSession;
+import com.quickblox.core.QBCallback;
+import com.quickblox.core.QBCallbackImpl;
+import com.quickblox.core.QBEntityCallback;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.QBSettings;
+import com.quickblox.core.exception.QBResponseException;
+import com.quickblox.core.helper.StringUtils;
 import com.quickblox.core.helper.StringifyArrayList;
+import com.quickblox.core.result.Result;
 import com.quickblox.messages.QBMessages;
 import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBEvent;
 import com.quickblox.messages.model.QBNotificationType;
-import com.quickblox.messages.model.QBPushType;
 import com.quickblox.messages.model.QBSubscription;
+import com.quickblox.sample.gcmchecker.QuerySendReport;
 import com.quickblox.sample.gcmchecker.R;
 import com.quickblox.sample.gcmchecker.main.Consts;
 import com.quickblox.sample.gcmchecker.main.ReportAdapter;
-import com.quickblox.sample.gcmchecker.main.helper.PlayServicesHelper;
 import com.quickblox.sample.gcmchecker.main.models.Credentials;
 import com.quickblox.sample.gcmchecker.main.models.Report;
 import com.quickblox.sample.gcmchecker.main.utils.DialogUtils;
@@ -41,10 +46,11 @@ import com.quickblox.users.model.QBUser;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -54,7 +60,6 @@ public class CheckerActivity extends Activity {
     private String TAG = CheckerActivity.class.getSimpleName();
     private Button startCheckerBtn;
     private ListView messagesList;
-    private PlayServicesHelper playServicesHelper;
     private ArrayList<Report> listReports = new ArrayList<>();
     private ReportAdapter reportAdapter;
     private ProgressBar checkerPB;
@@ -62,7 +67,7 @@ public class CheckerActivity extends Activity {
     private GoogleCloudMessaging googleCloudMessaging;
     private String regId;
     private Credentials currentCredentials;
-
+    private ArrayList<Credentials> testServersList;
 
 
     @Override
@@ -71,8 +76,7 @@ public class CheckerActivity extends Activity {
         setContentView(R.layout.push_notification_checker_layout);
         initUI();
 
-//        playServicesHelper = new PlayServicesHelper(this);
-
+        createTestServersList();
         // Register to receive push notifications events
         //
         LocalBroadcastManager.getInstance(this).registerReceiver(mPushReceiver,
@@ -80,6 +84,26 @@ public class CheckerActivity extends Activity {
 
         Log.d(TAG, "Downloaded information about " + String.valueOf(SplashActivity.credentialsList.size()) + " servers");
 
+    }
+
+    private void createTestServersList() {
+        testServersList = new ArrayList<>();
+
+        Credentials credentials_1 = new Credentials();
+        credentials_1.setAppId(Consts.APP_ID);
+        credentials_1.setAuthKey(Consts.AUTH_KEY);
+        credentials_1.setAuthSecret(Consts.AUTH_SECRET);
+        credentials_1.setUserID(String.valueOf(2224038));
+        credentials_1.setUserLogin(Consts.USER_LOGIN);
+        credentials_1.setUserPass(Consts.USER_PASSWORD);
+        credentials_1.setTitle("starter");
+
+        Credentials credentials_2 = SplashActivity.credentialsList.get(SplashActivity.credentialsList.size() - 1);
+        Credentials credentials_3 = SplashActivity.credentialsList.get(7);
+
+        testServersList.add(credentials_1);
+        testServersList.add(credentials_2);
+        testServersList.add(credentials_3);
     }
 
     private void initUI() {
@@ -100,67 +124,10 @@ public class CheckerActivity extends Activity {
 
     public void startChecker(View view) {
         checkerPB.setVisibility(View.VISIBLE);
-//        Credentials credentials = SplashActivity.credentialsList.get(16);
-//        setCurrentCredentials(credentials);
-//        Credentials currentCredentials = getCurrentCredentials();
-//        initApp(currentCredentials.getAppId(),
-//                currentCredentials.getAuthKey(),
-//                currentCredentials.getAuthSecret(),
-//                currentCredentials.getServerApiDomain());
-//        createSession(Integer.parseInt(currentCredentials.getUserID()),
-//                currentCredentials.getUserLogin(),
-//                currentCredentials.getUserPass());
-
-        initApp(Consts.APP_ID,
-                Consts.AUTH_KEY,
-                Consts.AUTH_SECRET,
-                null);
-        createSession(2224038,
-                Consts.USER_LOGIN,
-                Consts.USER_PASSWORD);
-        Credentials credentials = new Credentials();
-        credentials.setUserID("2224038");
-        credentials.setTitle("starter");
+        Credentials credentials = testServersList.get(2);
         setCurrentCredentials(credentials);
-
-
-
-//        final Handler handler = new Handler() {
-//            @Override
-//            public void handleMessage(Message msg) {
-//                Bundle bundle = msg.getData();
-//                QBEvent qbEvent = (QBEvent) bundle.getSerializable(Consts.QBEVENT_EXTRAS);
-//                sendPushNotification(qbEvent);
-//            }
-//
-//        };
-//
-//        t = new Thread(new Runnable() {
-//            public void run() {
-////                loadServersData();
-//                Credentials credentials = SplashActivity.credentialsList.get(0);
-//                initApp(credentials.getAppId(),
-//                        credentials.getAuthKey(),
-//                        credentials.getAuthSecret(),
-//                        credentials.getServerApiDomain());
-//                createSession(credentials.getUserLogin(),
-//                        credentials.getUserPass());
-//
-////                try {
-////                    do {
-////                        Message msg = handler.obtainMessage();
-////                        Bundle bundle = new Bundle();
-////                        bundle.putSerializable(Consts.QBEVENT_EXTRAS, createPushNotificationEvent());
-////                        msg.setData(bundle);
-////                        handler.sendMessage(msg);
-////                        TimeUnit.MILLISECONDS.sleep(Consts.PUSH_TIMEOUT);
-////                    } while (Consts.PUSH_TIMEOUT > 0);
-////                } catch (InterruptedException e) {
-////                    e.printStackTrace();
-////                }
-//            }
-//        });
-//        t.start();
+        initApp();
+        createSession();
     }
 
     public QBEvent createPushNotificationEvent(){
@@ -215,21 +182,23 @@ public class CheckerActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "new broadcast message ");
-            Report report = new Report();
-            report.setSendDate(intent.getExtras().getString(Consts.EXTRA_SEND_DATE));
-            report.setDeliveryDate(intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE));
-            report.setServerTitle(intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE));
+            String sendDate = intent.getExtras().getString(Consts.EXTRA_SEND_DATE);
+            String deliveryDate = intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE);
+            String serverTitle = intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE);
 
-//            for (String key : intent.getExtras().keySet()){
-//                Log.d(TAG, key + ": " + intent.getExtras().get(key));
-//            }
+            if (sendDate != null && deliveryDate != null && serverTitle != null) {
+                Report report = new Report();
+                report.setSendDate(sendDate);
+                report.setDeliveryDate(deliveryDate);
+                report.setServerTitle(serverTitle);
 
-            processingMessage(report);
+                processingMessage(report);
+            }
         }
 
     };
 
-    private void processingMessage(Report report){
+    private void processingMessage(Report report) {
         long timeFromMessage = Long.parseLong(report.getSendDate());
         long currentTimeMillis = Long.parseLong(report.getDeliveryDate());
         Date dateSend = new Date (timeFromMessage);
@@ -242,16 +211,45 @@ public class CheckerActivity extends Activity {
         SimpleDateFormat df2 = new SimpleDateFormat("HH:mm:ss.SSS");
         String dateSendText = df2.format(dateSend);
         String currentDateText = df2.format(currentDate);
-        String travelingDateText = String.valueOf((currentTimeMillis - timeFromMessage)/1000);
-        Log.d(TAG, "\n"
+        String travelingDateText = String.valueOf(currentTimeMillis - timeFromMessage);
+        Log.d(TAG, "see report: \n"
                 + "\ndateSend = " + dateSendText
                 + "\n" + "currentDateText = " + currentDateText
-                + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) / 1000 + " sec");
+                + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) + " miliSec");
 
         Report report1 = new Report (dateSendText, currentDateText, travelingDateText);
         report1.setServerTitle(report.getServerTitle());
         listReports.add(report1);
         reportAdapter.notifyDataSetChanged();
+//
+        if (!StringUtils.isEmpty(report.getServerTitle()) && !StringUtils.isEmpty(report.getDeliveryDate())) {
+
+            QuerySendReport querySendReport = new QuerySendReport(
+                    report.getServerTitle(),
+                    report.getDeliveryDate(),
+                    travelingDateText);
+            querySendReport.performAsyncWithCallback(new QBEntityCallbackImpl<Void>() {
+
+                                                         @Override
+                                                         public void onSuccess(Void result, Bundle params) {
+                                                             Log.d(TAG, "send report result - onSuccess(Object result, Bundle params) " + result.toString());
+                                                         }
+
+                                                         @Override
+                                                         public void onSuccess() {
+                                                             Log.d(TAG, "send report result - onSuccess() ");
+                                                         }
+
+                                                         @Override
+                                                         public void onError(List errors) {
+                                                             Log.d(TAG, "send report result - onError(List errors) " + errors.toString());
+                                                         }
+                                                     }
+
+            );
+//            Log.d(TAG, "report result onComplete(Result result)" + result.toString());
+        }
+
 
     }
 
@@ -274,19 +272,31 @@ public class CheckerActivity extends Activity {
         super.onDestroy();
     }
 
-    private void initApp (Integer appId, String authKey, String authSecret, String serverApiDomain){
-        if (serverApiDomain != null) {
-            if (serverApiDomain.contains("https://")){
-                StringBuilder stringBuilder = new StringBuilder(serverApiDomain);
-                stringBuilder.delete(0,8);
-                serverApiDomain = stringBuilder.toString();
+    private void initApp (){
+        Integer appId = getCurrentCredentials().getAppId();
+        String authKey = getCurrentCredentials().getAuthKey();
+        String authSecret = getCurrentCredentials().getAuthSecret();
+        String urlServerApiDomain = getCurrentCredentials().getServerApiDomain();
+
+
+        if (urlServerApiDomain != null) {
+            String serverApiDomain = null;
+            try {
+                URL url = new URL(urlServerApiDomain);
+                serverApiDomain = url.getHost();
+                Log.d(TAG, "URL host =  " + serverApiDomain);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
             QBSettings.getInstance().setServerApiDomain(serverApiDomain);
         }
         QBSettings.getInstance().fastConfigInit(appId.toString(), authKey, authSecret);
     }
 
-    private void createSession (final Integer userId, String userLogin, String userPass) {
+    private void createSession () {
+        String userLogin = getCurrentCredentials().getUserLogin();
+        String userPass = getCurrentCredentials().getUserPass();
+
         final QBUser qbUser = new QBUser();
         qbUser.setLogin(userLogin);
         qbUser.setPassword(userPass);
@@ -294,7 +304,7 @@ public class CheckerActivity extends Activity {
         QBAuth.createSession(qbUser, new QBEntityCallbackImpl<QBSession>() {
             @Override
             public void onSuccess(QBSession qbSession, Bundle bundle) {
-                subscribeToPushNotifications(userId);
+                subscribeToPushNotifications();
             }
 
             @Override
@@ -307,7 +317,7 @@ public class CheckerActivity extends Activity {
         });
     }
 
-    private void subscribeToPushNotifications(final Integer userId) {
+    private void subscribeToPushNotifications() {
         Log.d(TAG, "subscribing...");
         new AsyncTask<Void, Void, String>() {
             @Override

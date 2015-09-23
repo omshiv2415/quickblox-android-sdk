@@ -24,7 +24,8 @@
             </intent-filter>
         </activity>
         
-        <activity android:name=".main.activities.CheckerActivity" />
+        <activity android:name=".main.activities.CheckerActivity"
+            android:screenOrientation="portrait"/>
 
     <receiver
         android:name=".GcmBroadcastReceiver"

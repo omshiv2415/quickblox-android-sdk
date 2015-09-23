@@ -69,9 +69,9 @@ public class ReportAdapter extends BaseAdapter{
 
             if (report.getTravelingTime()!= null){
             int travelingTimeSecond = Integer.parseInt(report.getTravelingTime());
-                if (travelingTimeSecond > Consts.PUSH_TIMEOUT/1000) {
+                if (travelingTimeSecond > Consts.PUSH_TIMEOUT) {
                     holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_yellow);
-                } else if (travelingTimeSecond <= Consts.PUSH_TIMEOUT/1000) {
+                } else if (travelingTimeSecond <= Consts.PUSH_TIMEOUT) {
                     holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_green);
                 }
             } else {
