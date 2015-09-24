@@ -27,6 +27,9 @@
         <activity android:name=".main.activities.CheckerActivity"
             android:screenOrientation="portrait"/>
 
+        <activity android:name=".main.activities.ResultTestsActivity"
+            android:configChanges="keyboardHidden|screenSize|orientation"/>
+
     <receiver
         android:name=".GcmBroadcastReceiver"
         android:permission="com.google.android.c2dm.permission.SEND">

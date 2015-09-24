@@ -1,5 +1,7 @@
 package com.quickblox.sample.gcmchecker.main;
 
+import com.quickblox.sample.gcmchecker.R;
+
 public class Consts {
 
     // QuickBlox credentials
@@ -20,8 +22,8 @@ public class Consts {
 //    public static final String USER_PASSWORD = "user_2user_2";
 
     // In GCM, the Sender ID is a project ID that you acquire from the API console
-//    public static final String PROJECT_NUMBER = "761750217637";
-    public static final String PROJECT_NUMBER = "287747642439";
+    public static final String PROJECT_NUMBER = "761750217637";
+//    public static final String PROJECT_NUMBER = "287747642439";
     public static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
     public static final String EXTRA_MESSAGE = "message";
@@ -29,6 +31,8 @@ public class Consts {
     public static final String EXTRA_DELIVERY_DATE = "deliveryDate";
     public static final String EXTRA_SEND_DATE = "sendDate";
     public static final String EXTRA_SERVER_TITLE = "serverTitle";
+    public static final String EXTRA_SERVER_ERRORS = "serverErrors";
+
 
     public static final String INSTANCES_WEB_RESOURCE = "http://status.quickblox.com/admin/push/instances";
     public static final String INSTANCES_TITLE = "title";
@@ -47,7 +51,9 @@ public class Consts {
     public static final String PLATFORM_VALUE = "android";
     public static final String PUSH_TIME_OUT = "timeout";
 
-
+    public static final int STATUS_COLOR_SUCCESS = R.drawable.shape_oval_green;
+    public static final int STATUS_COLOR_FAIL = R.drawable.shape_oval_red;
+    public static final int STATUS_COLOR_IN_PROGRESS = R.drawable.shape_oval_gray;
 
 
     public static final String GCM_NOTIFICATION = "GCM Notification";
@@ -60,7 +66,6 @@ public class Consts {
     public static final int PUSH_TIMEOUT = 10000;
     public static final String QBEVENT_EXTRAS = "qbEventExtras";
     public static final String NEW_PUSH_BUNDLE = "newPushBundle";
-
 
 
 }

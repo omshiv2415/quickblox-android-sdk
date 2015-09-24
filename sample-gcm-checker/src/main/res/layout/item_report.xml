@@ -10,7 +10,7 @@
         android:id="@+id/sendResultTV"
         android:layout_width="60dp"
         android:layout_height="wrap_content"
-        android:text="1/1"
+        android:text="0/0"
         android:textColor="@android:color/black"
         android:textSize="8pt"
         android:gravity="center_horizontal"/>
@@ -26,19 +26,19 @@
         android:id="@+id/serverTitleTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="server_title"
+        android:text=""
         android:textColor="@android:color/black"
         android:textSize="8pt"
         android:maxLines="1"
         android:gravity="left"
-        android:paddingLeft="5dp"/>
+        android:paddingLeft="10dp"/>
 
     <TextView
         android:id="@+id/deliveryTimeTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="16:59:52.455"
+        android:text=""
         android:textColor="@android:color/black"
         android:textSize="8pt"
         android:gravity="right"/>

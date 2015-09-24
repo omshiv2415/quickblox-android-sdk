@@ -8,6 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.quickblox.sample.gcmchecker.R;
+import com.quickblox.sample.gcmchecker.main.models.Credentials;
 import com.quickblox.sample.gcmchecker.main.models.Report;
 
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.ArrayList;
  * Created by tereha on 15.09.15.
  */
 public class ReportAdapter extends BaseAdapter{
-    private Context context;
     private ArrayList<Report> listReports;
     private LayoutInflater inflater;
 
@@ -41,6 +41,7 @@ public class ReportAdapter extends BaseAdapter{
         return position;
     }
 
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
@@ -49,9 +50,9 @@ public class ReportAdapter extends BaseAdapter{
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.item_report, null);
             holder = new ViewHolder();
-            holder.sendResultTV = (TextView) convertView.findViewById(R.id.sendTimeTV);
-            holder.serverTitleTV = (TextView) convertView.findViewById(R.id.serverTitleTV);
+            holder.sendResultTV = (TextView) convertView.findViewById(R.id.sendResultTV);
             holder.statusOvalTV = (TextView) convertView.findViewById(R.id.statusOvalTV);
+            holder.serverTitleTV = (TextView) convertView.findViewById(R.id.serverTitleTV);
             holder.deliveryTimeTV = (TextView) convertView.findViewById(R.id.deliveryTimeTV);
 
             convertView.setTag(holder);
@@ -64,19 +65,10 @@ public class ReportAdapter extends BaseAdapter{
 
 
         if (report != null) {
+            holder.sendResultTV.setText(report.getSuccessPushes() + "/" + report.getSendedPushes());
+            holder.statusOvalTV.setBackgroundResource(report.getColorStatusOval());
             holder.serverTitleTV.setText(report.getServerTitle());
-            holder.deliveryTimeTV.setText(report.getDeliveryDate());
-
-            if (report.getTravelingTime()!= null){
-            int travelingTimeSecond = Integer.parseInt(report.getTravelingTime());
-                if (travelingTimeSecond > Consts.PUSH_TIMEOUT) {
-                    holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_yellow);
-                } else if (travelingTimeSecond <= Consts.PUSH_TIMEOUT) {
-                    holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_green);
-                }
-            } else {
-                holder.statusOvalTV.setBackgroundResource(R.drawable.shape_oval_red);
-            }
+            holder.deliveryTimeTV.setText(report.getDeliveryDateLastPush());
         }
 
         return convertView;

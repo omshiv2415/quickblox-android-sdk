@@ -1,6 +1,7 @@
 include 'snippets'
 include 'sample-users'
 include 'sample-messages'
+include 'sample-gcm-checker'
 include 'sample-location'
 include 'sample-custom-objects'
 include 'sample-content'

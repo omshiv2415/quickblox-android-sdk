@@ -13,6 +13,7 @@ import com.qb.gson.JsonElement;
 import com.qb.gson.JsonObject;
 import com.qb.gson.JsonParser;
 
+import com.qb.gson.JsonSyntaxException;
 import com.quickblox.sample.gcmchecker.R;
 import com.quickblox.sample.gcmchecker.main.Consts;
 import com.quickblox.sample.gcmchecker.main.models.Credentials;
@@ -102,6 +103,10 @@ public class SplashActivity extends Activity{
             }
             Log.d(TAG, "credentialsList.size() = " + credentialsList.size());
             return true;
+        } catch (JsonSyntaxException e){
+            e.printStackTrace();
+//            DialogUtils.showLong(getApplicationContext(), getString(R.string.error_loading_data));
+            return false;
         } catch (IOException e) {
             e.printStackTrace();
 //            DialogUtils.showLong(getApplicationContext(), getString(R.string.error_loading_data));

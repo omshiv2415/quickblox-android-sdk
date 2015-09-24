@@ -4,42 +4,38 @@ package com.quickblox.sample.gcmchecker.main.models;
  * Created by tereha on 15.09.15.
  */
 public class Report {
-    private String sendDate;
-    private String deliveryDate;
-    private String travelingTime;
+    private int successPushes;
+    private int sendedPushes;
+    private int colorStatusOval;
     private String serverTitle;
+    private String deliveryDateLastPush;
 
-    public Report(String sendDate, String deliveryDate, String travelingTime){
-        this.sendDate = sendDate;
-        this.deliveryDate = deliveryDate;
-        this.travelingTime = travelingTime;
+
+    public Report() {
     }
 
-    public Report (){
+    public int getSuccessPushes() {
+        return successPushes;
     }
 
-    public String getSendDate() {
-        return sendDate;
+    public void setSuccessPushes(int successPushes) {
+        this.successPushes = successPushes;
     }
 
-    public void setSendDate(String sendDate) {
-        this.sendDate = sendDate;
+    public int getSendedPushes() {
+        return sendedPushes;
     }
 
-    public String getDeliveryDate() {
-        return deliveryDate;
+    public void setSendedPushes(int sendedPushes) {
+        this.sendedPushes = sendedPushes;
     }
 
-    public void setDeliveryDate(String deliveryDate) {
-        this.deliveryDate = deliveryDate;
+    public int getColorStatusOval() {
+        return colorStatusOval;
     }
 
-    public String getTravelingTime() {
-        return travelingTime;
-    }
-
-    public void setTravelingTime(String travelingTime) {
-        this.travelingTime = travelingTime;
+    public void setColorStatusOval(int colorStatusOval) {
+        this.colorStatusOval = colorStatusOval;
     }
 
     public String getServerTitle() {
@@ -48,5 +44,13 @@ public class Report {
 
     public void setServerTitle(String serverTitle) {
         this.serverTitle = serverTitle;
+    }
+
+    public String getDeliveryDateLastPush() {
+        return deliveryDateLastPush;
+    }
+
+    public void setDeliveryDateLastPush(String deliveryDateLastPush) {
+        this.deliveryDateLastPush = deliveryDateLastPush;
     }
 }

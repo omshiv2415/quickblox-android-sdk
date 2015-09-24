@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/itemTimeReport"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="5dp">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:text="@string/time"/>
+
+        <TextView
+            android:id="@+id/timeErrorTV"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="start"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="70dp"
+            android:layout_height="wrap_content"
+            android:text="@string/message"/>
+
+        <TextView
+            android:id="@+id/textErrorTV"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="start"/>
+    </LinearLayout>
+</LinearLayout>

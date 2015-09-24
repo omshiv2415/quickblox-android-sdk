@@ -5,10 +5,6 @@ package com.quickblox.sample.gcmchecker.main.models;
  */
 public class Credentials {
 
-//    @SerializedName("instances")
-//    private String instances;
-
-
     private String title;
     private Integer appId;
     private String authKey;

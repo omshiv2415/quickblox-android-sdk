@@ -15,4 +15,7 @@
     <string name="send_time">Send time</string>
     <string name="delivery_time">Delivery time</string>
     <string name="traveling_time">Traveling time (sec)</string>
+    <string name="no_information">Information about testing this server is absent</string>
+    <string name="time">Time</string>
+    <string name="message">Message</string>
 </resources>
