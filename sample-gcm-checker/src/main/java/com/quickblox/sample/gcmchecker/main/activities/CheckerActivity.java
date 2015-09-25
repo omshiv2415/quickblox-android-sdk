@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by tereha on 15.09.15.
@@ -72,6 +73,8 @@ public class CheckerActivity extends AppCompatActivity {
     private ArrayList<Credentials> testServersList;
     public static HashMap<String, ArrayList<ResultTests>> resultsMap;
     private ArrayList<Report> reportList;
+    private int desiredPushId;
+    private ArrayList<Credentials> credentialsList;
 
 
     @Override
@@ -110,13 +113,14 @@ public class CheckerActivity extends AppCompatActivity {
         testServersList.add(credentials_2);
         testServersList.add(credentials_3);
 
-        reportAdapter = new ReportAdapter(this, reportList);
-        serversListView.setAdapter(reportAdapter);
+//        reportAdapter = new ReportAdapter(this, reportList);
+//        serversListView.setAdapter(reportAdapter);
     }
 
     private void prepareData(){
+        credentialsList = SplashActivity.credentialsList;
         reportList = new ArrayList<>();
-        for (Credentials credentials : SplashActivity.credentialsList){
+        for (Credentials credentials : credentialsList){
             Report report = new Report();
             report.setSendedPushes(0);
             report.setSuccessPushes(0);
@@ -128,9 +132,8 @@ public class CheckerActivity extends AppCompatActivity {
 
     private void initUI() {
         serversListView = (ListView) findViewById(R.id.serversList);
-
-//        reportAdapter = new ReportAdapter(this, testServersList);
-//        serversListView.setAdapter(reportAdapter);
+        reportAdapter = new ReportAdapter(this, reportList);
+        serversListView.setAdapter(reportAdapter);
         serversListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -160,18 +163,99 @@ public class CheckerActivity extends AppCompatActivity {
         this.currentCredentials = currentCredentials;
     }
 
+    public int getDesiredPushId() {
+        return desiredPushId;
+    }
+
+    public void setDesiredPushId(int desiredPushId) {
+        this.desiredPushId = desiredPushId;
+    }
+
     public void startCheckerClick(View view) {
         checkerPB.setVisibility(View.VISIBLE);
 
-//        Credentials credentials = testServersList.get(1);
-        Credentials credentials = SplashActivity.credentialsList.get(10);
-        setCurrentCredentials(credentials);
-//        Report report1 = new Report (null, null, null);
-//        report1.setServerTitle(getCurrentCredentials().getTitle());
-//        listReports.add(report1);
-//        reportAdapter.notifyDataSetChanged();
-        initApp();
-        createSession();
+//        int i = 0;
+
+//        Handler h = new Handler(getMainLooper());
+//        h.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                int i = 0;
+//                do {
+//                    checkerPB.setVisibility(View.VISIBLE);
+//                    setDesiredPushId(0);
+//                    Credentials credentials = credentialsList.get(i);
+//                    setCurrentCredentials(credentials);
+//                    initApp();
+//                    createSession();
+//
+//                    if (i == SplashActivity.credentialsList.size() -1){
+//                        i = 0;
+//                    } else {
+//                        i++;
+//                    }
+//                } while (true);
+//            }
+//        });
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+
+                Handler h = new Handler(getMainLooper());
+                h.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        int i = 0;
+                        do {
+                            checkerPB.setVisibility(View.VISIBLE);
+                            setDesiredPushId(0);
+                            Credentials credentials = credentialsList.get(i);
+                            setCurrentCredentials(credentials);
+                            initApp();
+                            createSession();
+
+                            if (i == SplashActivity.credentialsList.size() - 1) {
+                                i = 0;
+                            } else {
+                                i++;
+                            }
+
+                            try {
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                    }
+                                }).sleep(10000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        } while (true);
+                    }
+                });
+
+                return null;
+            }
+        }.execute(null, null, null);
+
+//        do {
+//
+//            checkerPB.setVisibility(View.VISIBLE);
+//            setDesiredPushId(0);
+//            Credentials credentials = credentialsList.get(i);
+//            setCurrentCredentials(credentials);
+//            initApp();
+//            createSession();
+//
+//            if (i == SplashActivity.credentialsList.size() -1){
+//                i = 0;
+//            } else {
+//                i++;
+//            }
+//
+//
+//        } while (true);
     }
 
     public QBEvent createPushNotificationEvent(){
@@ -179,12 +263,14 @@ public class CheckerActivity extends AppCompatActivity {
         qbEvent.setNotificationType(QBNotificationType.PUSH);
         qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
 
+        int pushId = new Random(System.currentTimeMillis()).nextInt(999999 - 100000) + 100000;
+        setDesiredPushId(pushId);
         long currentTimeMillis = System.currentTimeMillis();
 
         JSONObject json = new JSONObject();
         try {
             json.put(Consts.EXTRA_MESSAGE, "");
-            json.put(Consts.EXTRA_PUSH_ID, "id");
+            json.put(Consts.EXTRA_PUSH_ID, pushId);
             json.put(Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
             json.put(Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
         } catch (Exception e) {
@@ -235,8 +321,13 @@ public class CheckerActivity extends AppCompatActivity {
             String sendDate = intent.getExtras().getString(Consts.EXTRA_SEND_DATE);
             String deliveryDate = intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE);
             String serverTitle = intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE);
+            String pushId = intent.getExtras().getString(Consts.EXTRA_PUSH_ID);
 
-            if (sendDate != null && deliveryDate != null && serverTitle != null) {
+            boolean isDesiredPush = Integer.parseInt(pushId)==getDesiredPushId();
+            Log.d(TAG, "pushId = " + pushId);
+
+
+            if (sendDate != null && deliveryDate != null && serverTitle != null && isDesiredPush) {
                 if (serverTitle.equals(getCurrentCredentials().getTitle())) {
 //                    Report report = new Report();
 //                    report.setSendDate(sendDate);
@@ -443,7 +534,7 @@ public class CheckerActivity extends AppCompatActivity {
             errorItem = resultsMap.get(serverTitle);
         }
 
-        errorItem.add(resultTests);
+        errorItem.add(0, resultTests);
     }
 
     private void updateReportUI(){
@@ -458,34 +549,57 @@ public class CheckerActivity extends AppCompatActivity {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void setColorStatusOval(int index, int backgroundResource){
-        View view = serversListView.getChildAt(index);
-        view.findViewById(R.id.statusOvalTV).setBackgroundResource(backgroundResource);
         reportAdapter.getItem(index).setColorStatusOval(backgroundResource);
+        View view = serversListView.getChildAt(index);
+        if (/*needUpdateUi(index) && */view != null) {
+            ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
+            if (viewHolder.getViewTag() == index) {
+                view.findViewById(R.id.statusOvalTV).setBackgroundResource(backgroundResource);
+            }
+        }
     }
 
     private void setDeliveryTime(int index, String time){
-        View view = serversListView.getChildAt(index);
-        TextView textView = (TextView) view.findViewById(R.id.deliveryTimeTV);
-        textView.setText(time);
         reportAdapter.getItem(index).setDeliveryDateLastPush(time);
-
+        View view = serversListView.getChildAt(index);
+        if (/*needUpdateUi(index) && */view != null) {
+            ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
+            if (viewHolder.getViewTag() == index) {
+                TextView textView = (TextView) view.findViewById(R.id.deliveryTimeTV);
+                textView.setText(time);
+            }
+        }
     }
 
     private void addSendedPushToReport (int index){
+        reportAdapter.getCount();
         reportAdapter.getItem(index).setSendedPushes(reportAdapter.getItem(index).getSendedPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSendedPushes();
         View view = serversListView.getChildAt(index);
-        TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
-        textView.setText(reportAdapter.getItem(index).getSuccessPushes() + "/" + newCount);
-
+        if (/*needUpdateUi(index) &&*/ view != null) {
+            ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
+            if (viewHolder.getViewTag() == index) {
+                TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
+                textView.setText(reportAdapter.getItem(index).getSuccessPushes() + "/" + newCount);
+            }
+        }
     }
 
     private void addSuccessPushToReport (int index){
         reportAdapter.getItem(index).setSuccessPushes(reportAdapter.getItem(index).getSuccessPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSuccessPushes();
         View view = serversListView.getChildAt(index);
-        TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
-        textView.setText(newCount + "/" + reportAdapter.getItem(index).getSendedPushes());
+        if (/*needUpdateUi(index) && */view != null) {
+            ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
+            if (viewHolder.getViewTag() == index) {
+                TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
+                textView.setText(newCount + "/" + reportAdapter.getItem(index).getSendedPushes());
+            }
+        }
+    }
+
+    private boolean needUpdateUi(int index){
+        return reportAdapter.getItem(index).getServerTitle().equals(getCurrentCredentials().getTitle());
     }
 
 }

@@ -63,21 +63,31 @@ public class ReportAdapter extends BaseAdapter{
 
         final Report report = listReports.get(position);
 
-
         if (report != null) {
             holder.sendResultTV.setText(report.getSuccessPushes() + "/" + report.getSendedPushes());
             holder.statusOvalTV.setBackgroundResource(report.getColorStatusOval());
             holder.serverTitleTV.setText(report.getServerTitle());
             holder.deliveryTimeTV.setText(report.getDeliveryDateLastPush());
+            holder.setViewTag(position);
         }
 
         return convertView;
     }
 
     public static class ViewHolder {
+        int viewTag;
         TextView sendResultTV;
         TextView serverTitleTV;
         TextView statusOvalTV;
         TextView deliveryTimeTV;
+
+        public int getViewTag() {
+            return viewTag;
+        }
+
+        public void setViewTag(int viewTag) {
+            this.viewTag = viewTag;
+        }
     }
+
 }
