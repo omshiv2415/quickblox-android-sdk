@@ -5,11 +5,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -66,15 +67,16 @@ public class CheckerActivity extends AppCompatActivity {
     private ArrayList<Report> listReports = new ArrayList<>();
     private ReportAdapter reportAdapter;
     private ProgressBar checkerPB;
-    private Thread t;
     private GoogleCloudMessaging googleCloudMessaging;
     private String regId;
     private Credentials currentCredentials;
-    private ArrayList<Credentials> testServersList;
     public static HashMap<String, ArrayList<ResultTests>> resultsMap;
     private ArrayList<Report> reportList;
     private int desiredPushId;
     private ArrayList<Credentials> credentialsList;
+    private Handler checkServerTaskHandler;
+    private Runnable checkServerTask;
+    private int i = 0;
 
 
     @Override
@@ -84,7 +86,6 @@ public class CheckerActivity extends AppCompatActivity {
         prepareData();
         initUI();
 
-        createTestServersList();
         // Register to receive push notifications events
         //
         LocalBroadcastManager.getInstance(this).registerReceiver(mPushReceiver,
@@ -92,29 +93,6 @@ public class CheckerActivity extends AppCompatActivity {
 
         Log.d(TAG, "Downloaded information about " + String.valueOf(SplashActivity.credentialsList.size()) + " servers");
 
-    }
-
-    private void createTestServersList() {
-        testServersList = new ArrayList<>();
-
-        Credentials credentials_1 = new Credentials();
-        credentials_1.setAppId(Consts.APP_ID);
-        credentials_1.setAuthKey(Consts.AUTH_KEY);
-        credentials_1.setAuthSecret(Consts.AUTH_SECRET);
-        credentials_1.setUserID(String.valueOf(2224038));
-        credentials_1.setUserLogin(Consts.USER_LOGIN);
-        credentials_1.setUserPass(Consts.USER_PASSWORD);
-        credentials_1.setTitle("starter");
-
-        Credentials credentials_2 = SplashActivity.credentialsList.get(SplashActivity.credentialsList.size() - 1);
-        Credentials credentials_3 = SplashActivity.credentialsList.get(7);
-
-//        testServersList.add(credentials_1);
-        testServersList.add(credentials_2);
-        testServersList.add(credentials_3);
-
-//        reportAdapter = new ReportAdapter(this, reportList);
-//        serversListView.setAdapter(reportAdapter);
     }
 
     private void prepareData(){
@@ -137,7 +115,7 @@ public class CheckerActivity extends AppCompatActivity {
         serversListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String selectedServerTitle = SplashActivity.credentialsList.get(position).getTitle();
+                String selectedServerTitle = credentialsList.get(position).getTitle();
                 if (resultsMap != null) {
                     if (resultsMap.containsKey(selectedServerTitle)) {
                         Intent intent = new Intent(CheckerActivity.this, ResultTestsActivity.class);
@@ -172,251 +150,28 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     public void startCheckerClick(View view) {
+        if (checkServerTaskHandler == null){
+            initCheckServerTask();
+        }
+
+        startCheckServerByIndex(0);
+    }
+
+    private void startCheckServerByIndex(int index) {
         checkerPB.setVisibility(View.VISIBLE);
+        setDesiredPushId(0);
+        Credentials credentials = credentialsList.get(index);
+        setCurrentCredentials(credentials);
 
-//        int i = 0;
-
-//        Handler h = new Handler(getMainLooper());
-//        h.post(new Runnable() {
-//            @Override
-//            public void run() {
-//                int i = 0;
-//                do {
-//                    checkerPB.setVisibility(View.VISIBLE);
-//                    setDesiredPushId(0);
-//                    Credentials credentials = credentialsList.get(i);
-//                    setCurrentCredentials(credentials);
-//                    initApp();
-//                    createSession();
-//
-//                    if (i == SplashActivity.credentialsList.size() -1){
-//                        i = 0;
-//                    } else {
-//                        i++;
-//                    }
-//                } while (true);
-//            }
-//        });
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-
-                Handler h = new Handler(getMainLooper());
-                h.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        int i = 0;
-                        do {
-                            checkerPB.setVisibility(View.VISIBLE);
-                            setDesiredPushId(0);
-                            Credentials credentials = credentialsList.get(i);
-                            setCurrentCredentials(credentials);
-                            initApp();
-                            createSession();
-
-                            if (i == SplashActivity.credentialsList.size() - 1) {
-                                i = 0;
-                            } else {
-                                i++;
-                            }
-
-                            try {
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-
-                                    }
-                                }).sleep(10000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        } while (true);
-                    }
-                });
-
-                return null;
-            }
-        }.execute(null, null, null);
-
-//        do {
-//
-//            checkerPB.setVisibility(View.VISIBLE);
-//            setDesiredPushId(0);
-//            Credentials credentials = credentialsList.get(i);
-//            setCurrentCredentials(credentials);
-//            initApp();
-//            createSession();
-//
-//            if (i == SplashActivity.credentialsList.size() -1){
-//                i = 0;
-//            } else {
-//                i++;
-//            }
-//
-//
-//        } while (true);
-    }
-
-    public QBEvent createPushNotificationEvent(){
-        QBEvent qbEvent = new QBEvent();
-        qbEvent.setNotificationType(QBNotificationType.PUSH);
-        qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
-
-        int pushId = new Random(System.currentTimeMillis()).nextInt(999999 - 100000) + 100000;
-        setDesiredPushId(pushId);
-        long currentTimeMillis = System.currentTimeMillis();
-
-        JSONObject json = new JSONObject();
-        try {
-            json.put(Consts.EXTRA_MESSAGE, "");
-            json.put(Consts.EXTRA_PUSH_ID, pushId);
-            json.put(Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
-            json.put(Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
-        } catch (Exception e) {
-            e.printStackTrace();
-            saveTestResult(e.getMessage());
+        if (i == credentialsList.size() - 1) {
+            i = 0;
+        } else {
+            i++;
         }
 
-        qbEvent.setMessage(json.toString());
-
-        StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
-        userIds.add(Integer.parseInt(getCurrentCredentials().getUserID()));
-        qbEvent.setUserIds(userIds);
-
-        return qbEvent;
-    }
-
-    public void sendPushNotification(QBEvent qbEvent){
-        addSendedPushToReport(10);
-        QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
-            @Override
-            public void onSuccess(QBEvent qbEvent, Bundle bundle) {
-                Log.d(TAG, "pushSended");
-                checkerPB.setVisibility(View.GONE);
-
-
-            }
-
-            @Override
-            public void onError(List<String> strings) {
-                Log.d(TAG, "pushErrorSend");
-                // errors
-                checkerPB.setVisibility(View.GONE);
-                DialogUtils.showLong(CheckerActivity.this, strings.toString());
-                setColorStatusOval(10, Consts.STATUS_COLOR_FAIL);
-                for (String s : strings) {
-                    saveTestResult(s);
-                }
-            }
-        });
-    }
-
-
-
-    private BroadcastReceiver mPushReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "new broadcast message ");
-            String sendDate = intent.getExtras().getString(Consts.EXTRA_SEND_DATE);
-            String deliveryDate = intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE);
-            String serverTitle = intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE);
-            String pushId = intent.getExtras().getString(Consts.EXTRA_PUSH_ID);
-
-            boolean isDesiredPush = Integer.parseInt(pushId)==getDesiredPushId();
-            Log.d(TAG, "pushId = " + pushId);
-
-
-            if (sendDate != null && deliveryDate != null && serverTitle != null && isDesiredPush) {
-                if (serverTitle.equals(getCurrentCredentials().getTitle())) {
-//                    Report report = new Report();
-//                    report.setSendDate(sendDate);
-//                    report.setDeliveryDate(deliveryDate);
-//                    report.setServerTitle(serverTitle);
-
-                    processingMessage(serverTitle, sendDate, deliveryDate);
-                }
-            }
-        }
-
-    };
-
-    private void processingMessage(String serverTitle,String sendDate, String deliveryDate) {
-        long timeFromMessage = Long.parseLong(sendDate);
-        long currentTimeMillis = Long.parseLong(deliveryDate);
-        Date dateSend = new Date (timeFromMessage);
-        Date currentDate = new Date (currentTimeMillis);
-//                "yyyy-MM-dd",
-//                "yyyy-MM-dd HH:mm",
-//                "yyyy-MM-dd HH:mmZ",
-//                "yyyy-MM-dd HH:mm:ss.SSSZ",
-//                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
-        SimpleDateFormat df2 = new SimpleDateFormat("HH:mm:ss.SSS");
-        String dateSendText = df2.format(dateSend);
-        String currentDateText = df2.format(currentDate);
-        String travelingDateText = String.valueOf(currentTimeMillis - timeFromMessage);
-        Log.d(TAG, "see report: \n"
-                + "\ndateSend = " + dateSendText
-                + "\n" + "currentDateText = " + currentDateText
-                + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) + " miliSec");
-
-//        Report report1 = new Report (dateSendText, currentDateText, travelingDateText);
-//        report1.setServerTitle(report.getServerTitle());
-//        listReports.add(report1);
-//        reportAdapter.notifyDataSetChanged();
-
-        setColorStatusOval(10, Consts.STATUS_COLOR_SUCCESS);
-        setDeliveryTime(10, currentDateText);
-        addSuccessPushToReport(10);
-
-
-        saveTestResult("Timeout = " + travelingDateText + " ms");
-
-        if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
-
-            QuerySendReport querySendReport = new QuerySendReport(
-                    serverTitle,
-                    deliveryDate,
-                    travelingDateText);
-            querySendReport.performAsyncWithCallback(new QBEntityCallbackImpl<Void>() {
-                                                         @Override
-                                                         public void onSuccess(Void result, Bundle params) {
-                                                             Log.d(TAG, "send report result - onSuccess(Object result, Bundle params) " + result.toString());
-                                                         }
-
-                                                         @Override
-                                                         public void onSuccess() {
-                                                             Log.d(TAG, "send report result - onSuccess() ");
-                                                             saveTestResult("The result has been successfully sent to the server");
-                                                         }
-
-                                                         @Override
-                                                         public void onError(List errors) {
-                                                             Log.d(TAG, "send report result - onError(List errors) " + errors.toString());
-                                                            saveTestResult(errors.toString());
-                                                         }
-                                                     }
-
-            );
-        }
-    }
-
-
-    public void stopCheckerClick(View view) {
-        if (t != null) {
-            Thread dummy = t;
-            t = null;
-            dummy.interrupt();
-        }
-        checkerPB.setVisibility(View.GONE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        // Unregister since the activity is about to be closed.
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
-
-        super.onDestroy();
+        startCheckTimer();
+        initApp();
+        createSession();
     }
 
     private void initApp (){
@@ -430,7 +185,6 @@ public class CheckerActivity extends AppCompatActivity {
             try {
                 URL url = new URL(urlServerApiDomain);
                 serverApiDomain = url.getHost();
-                Log.d(TAG, "URL host =  " + serverApiDomain);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -455,10 +209,12 @@ public class CheckerActivity extends AppCompatActivity {
 
             @Override
             public void onError(List<String> strings) {
+                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 for (String s : strings) {
                     Log.d(TAG, "Error subscribing " + s);
                     saveTestResult(s);
                 }
+                startCheckServerByIndex(i);
             }
         });
     }
@@ -498,30 +254,181 @@ public class CheckerActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onError(List<String> errors) {
+                                    setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                                     for (String s : errors){
                                         Log.d(TAG, "Error subscribing " + s);
                                         saveTestResult(s);
                                     }
+                                    startCheckServerByIndex(i);
                                 }
                             });
                         }
                     });
                 } catch (IOException ex) {
                     saveTestResult(ex.getMessage());
+                    startCheckServerByIndex(i);
                 }
                 return null;
             }
         }.execute(null, null, null);
     }
 
+    public void sendPushNotification(QBEvent qbEvent){
+        addSendedPushToReport();
+        QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
+            @Override
+            public void onSuccess(QBEvent qbEvent, Bundle bundle) {
+                Log.d(TAG, "pushSended");
+                checkerPB.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onError(List<String> strings) {
+                Log.d(TAG, "pushErrorSend");
+                checkerPB.setVisibility(View.GONE);
+                DialogUtils.showLong(CheckerActivity.this, strings.toString());
+                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                for (String s : strings) {
+                    saveTestResult(s);
+                }
+                startCheckServerByIndex(i);
+            }
+        });
+    }
+
+    public QBEvent createPushNotificationEvent(){
+        QBEvent qbEvent = new QBEvent();
+        qbEvent.setNotificationType(QBNotificationType.PUSH);
+        qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
+
+        int pushId = new Random(System.currentTimeMillis()).nextInt(999999 - 100000) + 100000;
+        setDesiredPushId(pushId);
+        long currentTimeMillis = System.currentTimeMillis();
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put(Consts.EXTRA_MESSAGE, "");
+            json.put(Consts.EXTRA_PUSH_ID, pushId);
+            json.put(Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
+            json.put(Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
+        } catch (Exception e) {
+            e.printStackTrace();
+            saveTestResult(e.getMessage());
+        }
+
+        qbEvent.setMessage(json.toString());
+
+        StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
+        userIds.add(Integer.parseInt(getCurrentCredentials().getUserID()));
+        qbEvent.setUserIds(userIds);
+
+        return qbEvent;
+    }
+
+    private BroadcastReceiver mPushReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "new broadcast message ");
+            String sendDate = intent.getExtras().getString(Consts.EXTRA_SEND_DATE);
+            String deliveryDate = intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE);
+            String serverTitle = intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE);
+            String pushId = intent.getExtras().getString(Consts.EXTRA_PUSH_ID);
+
+            boolean isDesiredPush = false;
+            if (pushId != null) {
+                isDesiredPush = Integer.parseInt(pushId) == getDesiredPushId();
+            }
+            Log.d(TAG, "pushId = " + pushId);
+
+            if (sendDate != null && deliveryDate != null && serverTitle != null && isDesiredPush) {
+                if (serverTitle.equals(getCurrentCredentials().getTitle())) {
+                    processingMessage(serverTitle, sendDate, deliveryDate);
+                }
+            }
+        }
+
+    };
+
+    private void processingMessage(String serverTitle,String sendDate, String deliveryDate) {
+        long timeFromMessage = Long.parseLong(sendDate);
+        long currentTimeMillis = Long.parseLong(deliveryDate);
+        Date dateSend = new Date (timeFromMessage);
+        Date currentDate = new Date (currentTimeMillis);
+//                "yyyy-MM-dd",
+//                "yyyy-MM-dd HH:mm",
+//                "yyyy-MM-dd HH:mmZ",
+//                "yyyy-MM-dd HH:mm:ss.SSSZ",
+//                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+        SimpleDateFormat df2 = new SimpleDateFormat("HH:mm:ss.SSS");
+        String dateSendText = df2.format(dateSend);
+        String currentDateText = df2.format(currentDate);
+        long travelingTime = currentTimeMillis - timeFromMessage;
+        String travelingDateText = String.valueOf(currentTimeMillis - timeFromMessage);
+        Log.d(TAG, "see report: \n"
+                + "\ndateSend = " + dateSendText
+                + "\n" + "currentDateText = " + currentDateText
+                + "\n" + "timeout = " + (currentTimeMillis - timeFromMessage) + " ms");
+
+        setColorStatusOval(Consts.STATUS_COLOR_SUCCESS);
+        setDeliveryTime(currentDateText);
+        addSuccessPushToReport();
+
+
+        saveTestResult("Timeout = " + travelingDateText + " ms");
+
+        stopCheckTimer();
+
+        if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
+            sendResultToServer(serverTitle, deliveryDate, travelingTime);
+        }
+
+        startCheckServerByIndex(i);
+    }
+
+    private void sendResultToServer(String serverTitle, String deliveryDate, long travelingTime) {
+        QuerySendReport querySendReport = new QuerySendReport(
+                serverTitle,
+                deliveryDate,
+                travelingTime);
+        querySendReport.performAsyncWithCallback(new QBEntityCallbackImpl<Void>() {
+                                                     @Override
+                                                     public void onSuccess(Void result, Bundle params) {
+                                                         Log.d(TAG, "send report result - onSuccess(Object result, Bundle params) " + result.toString());
+                                                     }
+
+                                                     @Override
+                                                     public void onSuccess() {
+                                                         Log.d(TAG, "send report result - onSuccess() ");
+                                                         saveTestResult("The result has been successfully sent to the server");
+                                                     }
+
+                                                     @Override
+                                                     public void onError(List errors) {
+                                                         Log.d(TAG, "send report result - onError(List errors) " + errors.toString());
+                                                         saveTestResult(errors.toString());
+                                                     }
+                                                 }
+
+        );
+    }
+
+
+    public void stopCheckerClick(View view) {
+        checkerPB.setVisibility(View.GONE);
+        stopCheckTimer();
+        checkServerTaskHandler = null;
+    }
+
+
+
     private void saveTestResult(String errorMessage){
         long currentDateLong = System.currentTimeMillis();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
         String currentDate = sdf.format(currentDateLong);
 
-        ResultTests resultTests = new ResultTests(currentDate, errorMessage);
-
         String serverTitle = getCurrentCredentials().getTitle();
+
+        ResultTests resultTests = new ResultTests(serverTitle + " " + currentDate, errorMessage);
 
         if (resultsMap == null) {
             resultsMap = new HashMap<>();
@@ -537,18 +444,13 @@ public class CheckerActivity extends AppCompatActivity {
         errorItem.add(0, resultTests);
     }
 
-    private void updateReportUI(){
-
-    }
-
     private View getViewByServerTitle(String serverTitle){
-
-
         return null;
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    private void setColorStatusOval(int index, int backgroundResource){
+    private void setColorStatusOval(int backgroundResource){
+        int index = i - 1;
         reportAdapter.getItem(index).setColorStatusOval(backgroundResource);
         View view = serversListView.getChildAt(index);
         if (/*needUpdateUi(index) && */view != null) {
@@ -559,7 +461,8 @@ public class CheckerActivity extends AppCompatActivity {
         }
     }
 
-    private void setDeliveryTime(int index, String time){
+    private void setDeliveryTime(String time){
+        int index = i - 1;
         reportAdapter.getItem(index).setDeliveryDateLastPush(time);
         View view = serversListView.getChildAt(index);
         if (/*needUpdateUi(index) && */view != null) {
@@ -571,8 +474,8 @@ public class CheckerActivity extends AppCompatActivity {
         }
     }
 
-    private void addSendedPushToReport (int index){
-        reportAdapter.getCount();
+    private void addSendedPushToReport (){
+        int index = i - 1;
         reportAdapter.getItem(index).setSendedPushes(reportAdapter.getItem(index).getSendedPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSendedPushes();
         View view = serversListView.getChildAt(index);
@@ -585,7 +488,8 @@ public class CheckerActivity extends AppCompatActivity {
         }
     }
 
-    private void addSuccessPushToReport (int index){
+    private void addSuccessPushToReport (){
+        int index = i - 1;
         reportAdapter.getItem(index).setSuccessPushes(reportAdapter.getItem(index).getSuccessPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSuccessPushes();
         View view = serversListView.getChildAt(index);
@@ -600,6 +504,39 @@ public class CheckerActivity extends AppCompatActivity {
 
     private boolean needUpdateUi(int index){
         return reportAdapter.getItem(index).getServerTitle().equals(getCurrentCredentials().getTitle());
+    }
+
+    private void initCheckServerTask() {
+        checkServerTaskHandler = new Handler(Looper.myLooper());
+        checkServerTask = new Runnable() {
+            @Override
+            public void run() {
+                startCheckServerByIndex(i);
+            }
+        };
+    }
+
+    private void startCheckTimer() {
+        Log.d(TAG, "");
+        if (checkServerTaskHandler != null) {
+            checkServerTaskHandler.postAtTime(checkServerTask, SystemClock.uptimeMillis() + Consts.PUSH_TIMEOUT);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    private void stopCheckTimer() {
+        Log.d(TAG, "");
+        if (checkServerTaskHandler != null) {
+            checkServerTaskHandler.removeCallbacks(checkServerTask);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Unregister since the activity is about to be closed.
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
+
+        super.onDestroy();
     }
 
 }

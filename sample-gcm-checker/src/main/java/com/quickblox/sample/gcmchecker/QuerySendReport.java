@@ -3,9 +3,7 @@ package com.quickblox.sample.gcmchecker;
 
 import com.quickblox.core.RestMethod;
 import com.quickblox.core.query.JsonQuery;
-import com.quickblox.core.query.Query;
 import com.quickblox.core.rest.RestRequest;
-import com.quickblox.messages.result.QBEventResult;
 import com.quickblox.sample.gcmchecker.main.Consts;
 
 /**
@@ -15,9 +13,9 @@ public class QuerySendReport extends JsonQuery<Void> {
 
     String serverTitle;
     String unixTime;
-    String pushTimeout;
+    long pushTimeout;
 
-    public QuerySendReport(String serverTitle, String unixTime, String pushTimeout) {
+    public QuerySendReport(String serverTitle, String unixTime, long pushTimeout) {
         this.serverTitle = serverTitle;
         this.unixTime = unixTime;
         this.pushTimeout = pushTimeout;
@@ -30,14 +28,14 @@ public class QuerySendReport extends JsonQuery<Void> {
 
     @Override
     protected String buildQueryUrl(Object... specificParts) {
-        StringBuilder urlBuilder = new StringBuilder(Consts.URL + "?");
-        urlBuilder.append(Consts.PLATFORM + "=");
+        StringBuilder urlBuilder = new StringBuilder(Consts.REPORT_URL + "?");
+        urlBuilder.append(Consts.REPORT_PARAMETER_PLATFORM + "=");
         urlBuilder.append(specificParts[0] + "&");
-        urlBuilder.append(Consts.SERVER + "=");
+        urlBuilder.append(Consts.REPORT_PARAMETER_SERVER + "=");
         urlBuilder.append(specificParts[1] + "&");
-        urlBuilder.append(Consts.PUSH_TIME + "=");
+        urlBuilder.append(Consts.REPORT_PARAMETER_PUSH_TIME + "=");
         urlBuilder.append(specificParts[2] + "&");
-        urlBuilder.append(Consts.PUSH_TIME_OUT + "=");
+        urlBuilder.append(Consts.REPORT_PARAMETER_PUSH_TIMEOUT + "=");
         urlBuilder.append(specificParts[3]);
         return urlBuilder.toString();
     }

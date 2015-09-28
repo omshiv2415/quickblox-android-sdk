@@ -44,12 +44,12 @@ public class Consts {
     public static final String INSTANCES_USER_PASSWORD = "userPass";
     public static final String INSTANCES_SERVER_API_DOMAIN = "serverApiDomain";
 
-    public static final String URL = "http://status.quickblox.com/admin/push";
-    public static final String SERVER = "server";
-    public static final String PUSH_TIME = "pushtime";
-    public static final String PLATFORM = "platform";
+    public static final String REPORT_URL = "http://status.quickblox.com/admin/push";
+    public static final String REPORT_PARAMETER_SERVER = "server";
+    public static final String REPORT_PARAMETER_PUSH_TIME = "pushtime";
+    public static final String REPORT_PARAMETER_PLATFORM = "platform";
     public static final String PLATFORM_VALUE = "android";
-    public static final String PUSH_TIME_OUT = "timeout";
+    public static final String REPORT_PARAMETER_PUSH_TIMEOUT = "timeout";
 
     public static final int STATUS_COLOR_SUCCESS = R.drawable.shape_oval_green;
     public static final int STATUS_COLOR_FAIL = R.drawable.shape_oval_red;
@@ -63,7 +63,7 @@ public class Consts {
     public static final String GCM_RECEIVED = "Received: ";
 
     public static final String NEW_PUSH_EVENT = "new-push-event";
-    public static final int PUSH_TIMEOUT = 10000;
+    public static final int PUSH_TIMEOUT = 20000;
     public static final String QBEVENT_EXTRAS = "qbEventExtras";
     public static final String NEW_PUSH_BUNDLE = "newPushBundle";
 
