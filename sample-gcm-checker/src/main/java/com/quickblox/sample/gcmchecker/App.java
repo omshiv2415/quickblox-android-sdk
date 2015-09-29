@@ -26,8 +26,8 @@ public class App extends Application {
 
         // Set application credentials
         //
-        QBSettings.getInstance().fastConfigInit(String.valueOf(Consts.APP_ID), Consts.AUTH_KEY,
-                Consts.AUTH_SECRET);
+//        QBSettings.getInstance().fastConfigInit(String.valueOf(Consts.APP_ID), Consts.AUTH_KEY,
+//                Consts.AUTH_SECRET);
     }
 
     /**

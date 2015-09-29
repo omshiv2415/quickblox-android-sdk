@@ -209,11 +209,13 @@ public class CheckerActivity extends AppCompatActivity {
 
             @Override
             public void onError(List<String> strings) {
+                stopCheckTimer();
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 for (String s : strings) {
                     Log.d(TAG, "Error subscribing " + s);
                     saveTestResult(s);
                 }
+                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
                 startCheckServerByIndex(i);
             }
         });
@@ -254,18 +256,22 @@ public class CheckerActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onError(List<String> errors) {
+                                    stopCheckTimer();
                                     setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                                     for (String s : errors){
                                         Log.d(TAG, "Error subscribing " + s);
                                         saveTestResult(s);
                                     }
+                                    sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
                                     startCheckServerByIndex(i);
                                 }
                             });
                         }
                     });
                 } catch (IOException ex) {
+                    stopCheckTimer();
                     saveTestResult(ex.getMessage());
+                    sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
                     startCheckServerByIndex(i);
                 }
                 return null;
@@ -284,13 +290,15 @@ public class CheckerActivity extends AppCompatActivity {
 
             @Override
             public void onError(List<String> strings) {
-                Log.d(TAG, "pushErrorSend");
+                stopCheckTimer();
+                Log.d(TAG, "pushErrorSend" + strings.toString());
                 checkerPB.setVisibility(View.GONE);
-                DialogUtils.showLong(CheckerActivity.this, strings.toString());
+                DialogUtils.show(CheckerActivity.this, strings.toString());
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 for (String s : strings) {
-                    saveTestResult(s);
+                    saveTestResult("Error" + s);
                 }
+                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
                 startCheckServerByIndex(i);
             }
         });
@@ -386,6 +394,10 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private void sendResultToServer(String serverTitle, String deliveryDate, long travelingTime) {
+        if (deliveryDate == null){
+            deliveryDate = String.valueOf(System.currentTimeMillis());
+        }
+
         QuerySendReport querySendReport = new QuerySendReport(
                 serverTitle,
                 deliveryDate,
@@ -399,13 +411,13 @@ public class CheckerActivity extends AppCompatActivity {
                                                      @Override
                                                      public void onSuccess() {
                                                          Log.d(TAG, "send report result - onSuccess() ");
-                                                         saveTestResult("The result has been successfully sent to the server");
+//                                                         saveTestResult("The result has been successfully sent to the server");
                                                      }
 
                                                      @Override
                                                      public void onError(List errors) {
                                                          Log.d(TAG, "send report result - onError(List errors) " + errors.toString());
-                                                         saveTestResult(errors.toString());
+//                                                         saveTestResult("Error sending data to the server" + errors.toString());
                                                      }
                                                  }
 
@@ -422,6 +434,9 @@ public class CheckerActivity extends AppCompatActivity {
 
 
     private void saveTestResult(String errorMessage){
+        if (errorMessage.equals("")){
+            errorMessage = "unknown error";
+        }
         long currentDateLong = System.currentTimeMillis();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
         String currentDate = sdf.format(currentDateLong);
@@ -445,6 +460,7 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private View getViewByServerTitle(String serverTitle){
+
         return null;
     }
 
@@ -511,6 +527,9 @@ public class CheckerActivity extends AppCompatActivity {
         checkServerTask = new Runnable() {
             @Override
             public void run() {
+                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                saveTestResult("Push timeout");
+                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
                 startCheckServerByIndex(i);
             }
         };

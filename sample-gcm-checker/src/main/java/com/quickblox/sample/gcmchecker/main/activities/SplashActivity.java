@@ -43,7 +43,6 @@ public class SplashActivity extends Activity{
 
         initUI();
         startTaskLoadData();
-//        loadServersData();
     }
 
     private void initUI() {
@@ -71,8 +70,6 @@ public class SplashActivity extends Activity{
     }
 
     public boolean loadServersData() {
-//        ArrayList<Credentials> credentialsList = new ArrayList<>();
-
         HttpClient client = new DefaultHttpClient();
         HttpGet request = new HttpGet(Consts.INSTANCES_WEB_RESOURCE);
 
@@ -99,18 +96,14 @@ public class SplashActivity extends Activity{
                 credentials.setServerApiDomain(instanceObject.get(Consts.INSTANCES_SERVER_API_DOMAIN).getAsString());
 
                 credentialsList.add(credentials);
-//                startCheckerActivity();
             }
             Log.d(TAG, "credentialsList.size() = " + credentialsList.size());
             return true;
         } catch (JsonSyntaxException e){
             e.printStackTrace();
-//            DialogUtils.showLong(getApplicationContext(), getString(R.string.error_loading_data));
             return false;
         } catch (IOException e) {
             e.printStackTrace();
-//            DialogUtils.showLong(getApplicationContext(), getString(R.string.error_loading_data));
-//            progressBar.setVisibility(View.INVISIBLE);
             return false;
         }
     }
