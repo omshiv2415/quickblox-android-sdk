@@ -76,7 +76,7 @@ public class CheckerActivity extends AppCompatActivity {
     private ArrayList<Credentials> credentialsList;
     private Handler checkServerTaskHandler;
     private Runnable checkServerTask;
-    private int i = 0;
+    private int indexCurrentServer = -1;
 
 
     @Override
@@ -154,20 +154,26 @@ public class CheckerActivity extends AppCompatActivity {
             initCheckServerTask();
         }
 
-        startCheckServerByIndex(0);
+        startCheckServer();
     }
 
-    private void startCheckServerByIndex(int index) {
+    private void startCheckServer() {
+        if (indexCurrentServer == credentialsList.size() - 1) {
+            indexCurrentServer = 0;
+        } else {
+            indexCurrentServer++;
+        }
+
         checkerPB.setVisibility(View.VISIBLE);
         setDesiredPushId(0);
-        Credentials credentials = credentialsList.get(index);
+        Credentials credentials = credentialsList.get(indexCurrentServer);
         setCurrentCredentials(credentials);
 
-        if (i == credentialsList.size() - 1) {
-            i = 0;
-        } else {
-            i++;
-        }
+//        if (indexCurrentServer == credentialsList.size() - 1) {
+//            indexCurrentServer = 0;
+//        } else {
+//            indexCurrentServer++;
+//        }
 
         startCheckTimer();
         initApp();
@@ -216,7 +222,7 @@ public class CheckerActivity extends AppCompatActivity {
                     saveTestResult(s);
                 }
                 sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServerByIndex(i);
+                startCheckServer();
             }
         });
     }
@@ -263,7 +269,7 @@ public class CheckerActivity extends AppCompatActivity {
                                         saveTestResult(s);
                                     }
                                     sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                                    startCheckServerByIndex(i);
+                                    startCheckServer();
                                 }
                             });
                         }
@@ -272,7 +278,7 @@ public class CheckerActivity extends AppCompatActivity {
                     stopCheckTimer();
                     saveTestResult(ex.getMessage());
                     sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                    startCheckServerByIndex(i);
+                    startCheckServer();
                 }
                 return null;
             }
@@ -280,10 +286,11 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     public void sendPushNotification(QBEvent qbEvent){
-        addSendedPushToReport();
+//        addSendedPushToReport();
         QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
             @Override
             public void onSuccess(QBEvent qbEvent, Bundle bundle) {
+                addSendedPushToReport();
                 Log.d(TAG, "pushSended");
                 checkerPB.setVisibility(View.GONE);
             }
@@ -299,7 +306,7 @@ public class CheckerActivity extends AppCompatActivity {
                     saveTestResult("Error" + s);
                 }
                 sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServerByIndex(i);
+                startCheckServer();
             }
         });
     }
@@ -350,6 +357,7 @@ public class CheckerActivity extends AppCompatActivity {
 
             if (sendDate != null && deliveryDate != null && serverTitle != null && isDesiredPush) {
                 if (serverTitle.equals(getCurrentCredentials().getTitle())) {
+                    stopCheckTimer();
                     processingMessage(serverTitle, sendDate, deliveryDate);
                 }
             }
@@ -384,13 +392,13 @@ public class CheckerActivity extends AppCompatActivity {
 
         saveTestResult("Timeout = " + travelingDateText + " ms");
 
-        stopCheckTimer();
+//        stopCheckTimer();
 
         if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
             sendResultToServer(serverTitle, deliveryDate, travelingTime);
         }
 
-        startCheckServerByIndex(i);
+        startCheckServer();
     }
 
     private void sendResultToServer(String serverTitle, String deliveryDate, long travelingTime) {
@@ -429,6 +437,7 @@ public class CheckerActivity extends AppCompatActivity {
         checkerPB.setVisibility(View.GONE);
         stopCheckTimer();
         checkServerTaskHandler = null;
+        checkServerTask = null;
     }
 
 
@@ -466,7 +475,7 @@ public class CheckerActivity extends AppCompatActivity {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void setColorStatusOval(int backgroundResource){
-        int index = i - 1;
+        int index = indexCurrentServer;
         reportAdapter.getItem(index).setColorStatusOval(backgroundResource);
         View view = serversListView.getChildAt(index);
         if (/*needUpdateUi(index) && */view != null) {
@@ -475,10 +484,11 @@ public class CheckerActivity extends AppCompatActivity {
                 view.findViewById(R.id.statusOvalTV).setBackgroundResource(backgroundResource);
             }
         }
+        reportAdapter.notifyDataSetChanged();
     }
 
     private void setDeliveryTime(String time){
-        int index = i - 1;
+        int index = indexCurrentServer;
         reportAdapter.getItem(index).setDeliveryDateLastPush(time);
         View view = serversListView.getChildAt(index);
         if (/*needUpdateUi(index) && */view != null) {
@@ -488,10 +498,11 @@ public class CheckerActivity extends AppCompatActivity {
                 textView.setText(time);
             }
         }
+        reportAdapter.notifyDataSetChanged();
     }
 
     private void addSendedPushToReport (){
-        int index = i - 1;
+        int index = indexCurrentServer;
         reportAdapter.getItem(index).setSendedPushes(reportAdapter.getItem(index).getSendedPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSendedPushes();
         View view = serversListView.getChildAt(index);
@@ -502,10 +513,11 @@ public class CheckerActivity extends AppCompatActivity {
                 textView.setText(reportAdapter.getItem(index).getSuccessPushes() + "/" + newCount);
             }
         }
+        reportAdapter.notifyDataSetChanged();
     }
 
     private void addSuccessPushToReport (){
-        int index = i - 1;
+        int index = indexCurrentServer;
         reportAdapter.getItem(index).setSuccessPushes(reportAdapter.getItem(index).getSuccessPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSuccessPushes();
         View view = serversListView.getChildAt(index);
@@ -516,6 +528,7 @@ public class CheckerActivity extends AppCompatActivity {
                 textView.setText(newCount + "/" + reportAdapter.getItem(index).getSendedPushes());
             }
         }
+        reportAdapter.notifyDataSetChanged();
     }
 
     private boolean needUpdateUi(int index){
@@ -530,7 +543,7 @@ public class CheckerActivity extends AppCompatActivity {
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 saveTestResult("Push timeout");
                 sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServerByIndex(i);
+                startCheckServer();
             }
         };
     }
