@@ -28,6 +28,7 @@ import com.quickblox.auth.QBAuth;
 import com.quickblox.auth.model.QBSession;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.QBSettings;
+import com.quickblox.core.exception.QBResponseException;
 import com.quickblox.core.helper.StringUtils;
 import com.quickblox.core.helper.StringifyArrayList;
 import com.quickblox.messages.QBMessages;
@@ -64,7 +65,6 @@ public class CheckerActivity extends AppCompatActivity {
     private String TAG = CheckerActivity.class.getSimpleName();
     private Button startCheckerBtn;
     private ListView serversListView;
-    private ArrayList<Report> listReports = new ArrayList<>();
     private ReportAdapter reportAdapter;
     private ProgressBar checkerPB;
     private GoogleCloudMessaging googleCloudMessaging;
@@ -77,6 +77,8 @@ public class CheckerActivity extends AppCompatActivity {
     private Handler checkServerTaskHandler;
     private Runnable checkServerTask;
     private int indexCurrentServer = -1;
+    private String deviceId;
+    private CheckServerTask checkServerTask1;
 
 
     @Override
@@ -169,15 +171,20 @@ public class CheckerActivity extends AppCompatActivity {
         Credentials credentials = credentialsList.get(indexCurrentServer);
         setCurrentCredentials(credentials);
 
-//        if (indexCurrentServer == credentialsList.size() - 1) {
-//            indexCurrentServer = 0;
-//        } else {
-//            indexCurrentServer++;
-//        }
-
         startCheckTimer();
+        startServerTest();
+//        initApp();
+//        createSession();
+    }
+
+    private void startServerTest() {
         initApp();
-        createSession();
+        startTestTask();
+    }
+
+    private void startTestTask() {
+        CheckServerTask checkServerTask1 = new CheckServerTask();
+        checkServerTask1.execute();
     }
 
     private void initApp (){
@@ -286,29 +293,28 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     public void sendPushNotification(QBEvent qbEvent){
-//        addSendedPushToReport();
-        QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
-            @Override
-            public void onSuccess(QBEvent qbEvent, Bundle bundle) {
-                addSendedPushToReport();
-                Log.d(TAG, "pushSended");
-                checkerPB.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onError(List<String> strings) {
-                stopCheckTimer();
-                Log.d(TAG, "pushErrorSend" + strings.toString());
-                checkerPB.setVisibility(View.GONE);
-                DialogUtils.show(CheckerActivity.this, strings.toString());
-                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                for (String s : strings) {
-                    saveTestResult("Error" + s);
-                }
-                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServer();
-            }
-        });
+//        QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
+//            @Override
+//            public void onSuccess(QBEvent qbEvent, Bundle bundle) {
+//                addSendedPushToReport();
+//                Log.d(TAG, "pushSended");
+//                checkerPB.setVisibility(View.GONE);
+//            }
+//
+//            @Override
+//            public void onError(List<String> strings) {
+//                stopCheckTimer();
+//                Log.d(TAG, "pushErrorSend" + strings.toString());
+//                checkerPB.setVisibility(View.GONE);
+//                DialogUtils.show(CheckerActivity.this, strings.toString());
+//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+//                for (String s : strings) {
+//                    saveTestResult("Error" + s);
+//                }
+//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+//                startCheckServer();
+//            }
+//        });
     }
 
     public QBEvent createPushNotificationEvent(){
@@ -392,8 +398,6 @@ public class CheckerActivity extends AppCompatActivity {
 
         saveTestResult("Timeout = " + travelingDateText + " ms");
 
-//        stopCheckTimer();
-
         if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
             sendResultToServer(serverTitle, deliveryDate, travelingTime);
         }
@@ -444,7 +448,7 @@ public class CheckerActivity extends AppCompatActivity {
 
     private void saveTestResult(String errorMessage){
         if (errorMessage.equals("")){
-            errorMessage = "unknown error";
+            errorMessage = "Unknown error";
         }
         long currentDateLong = System.currentTimeMillis();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
@@ -468,17 +472,12 @@ public class CheckerActivity extends AppCompatActivity {
         errorItem.add(0, resultTests);
     }
 
-    private View getViewByServerTitle(String serverTitle){
-
-        return null;
-    }
-
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void setColorStatusOval(int backgroundResource){
         int index = indexCurrentServer;
         reportAdapter.getItem(index).setColorStatusOval(backgroundResource);
         View view = serversListView.getChildAt(index);
-        if (/*needUpdateUi(index) && */view != null) {
+        if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
                 view.findViewById(R.id.statusOvalTV).setBackgroundResource(backgroundResource);
@@ -491,7 +490,7 @@ public class CheckerActivity extends AppCompatActivity {
         int index = indexCurrentServer;
         reportAdapter.getItem(index).setDeliveryDateLastPush(time);
         View view = serversListView.getChildAt(index);
-        if (/*needUpdateUi(index) && */view != null) {
+        if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
                 TextView textView = (TextView) view.findViewById(R.id.deliveryTimeTV);
@@ -506,7 +505,7 @@ public class CheckerActivity extends AppCompatActivity {
         reportAdapter.getItem(index).setSendedPushes(reportAdapter.getItem(index).getSendedPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSendedPushes();
         View view = serversListView.getChildAt(index);
-        if (/*needUpdateUi(index) &&*/ view != null) {
+        if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
                 TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
@@ -521,7 +520,7 @@ public class CheckerActivity extends AppCompatActivity {
         reportAdapter.getItem(index).setSuccessPushes(reportAdapter.getItem(index).getSuccessPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSuccessPushes();
         View view = serversListView.getChildAt(index);
-        if (/*needUpdateUi(index) && */view != null) {
+        if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
                 TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
@@ -531,15 +530,12 @@ public class CheckerActivity extends AppCompatActivity {
         reportAdapter.notifyDataSetChanged();
     }
 
-    private boolean needUpdateUi(int index){
-        return reportAdapter.getItem(index).getServerTitle().equals(getCurrentCredentials().getTitle());
-    }
-
     private void initCheckServerTask() {
         checkServerTaskHandler = new Handler(Looper.myLooper());
         checkServerTask = new Runnable() {
             @Override
             public void run() {
+//                checkServerTask1.cancel(true);
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 saveTestResult("Push timeout");
                 sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
@@ -549,7 +545,6 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private void startCheckTimer() {
-        Log.d(TAG, "");
         if (checkServerTaskHandler != null) {
             checkServerTaskHandler.postAtTime(checkServerTask, SystemClock.uptimeMillis() + Consts.PUSH_TIMEOUT);
         }
@@ -557,7 +552,6 @@ public class CheckerActivity extends AppCompatActivity {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void stopCheckTimer() {
-        Log.d(TAG, "");
         if (checkServerTaskHandler != null) {
             checkServerTaskHandler.removeCallbacks(checkServerTask);
         }
@@ -565,10 +559,82 @@ public class CheckerActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        // Unregister since the activity is about to be closed.
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
 
         super.onDestroy();
+    }
+
+    private class CheckServerTask extends AsyncTask <Void, String, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                initGCMInstances();
+
+                QBAuth.createSession(new QBUser(getCurrentCredentials().getUserLogin(),
+                        getCurrentCredentials().getUserPass()));
+
+                QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT);
+
+                QBMessages.createEvent(createPushNotificationEvent());
+                publishProgress(Consts.TASK_SUCCESS_ACTION);
+
+
+            } catch (QBResponseException e) {
+                e.printStackTrace();
+                publishProgress(Consts.TASK_FAIL_ACTION);
+//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                saveTestResult(e.getMessage());
+//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+//                startCheckServer();
+            } catch (IOException e){
+                e.printStackTrace();
+                publishProgress(Consts.TASK_FAIL_ACTION);
+//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                saveTestResult(e.getMessage());
+//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+//                startCheckServer();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... params) {
+            if (params[0].equals(Consts.TASK_SUCCESS_ACTION)) {
+                addSendedPushToReport();
+            } else {
+                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+                startCheckServer();
+            }
+            super.onProgressUpdate();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    private void initGCMInstances() throws IOException {
+        if (googleCloudMessaging == null) {
+            googleCloudMessaging = GoogleCloudMessaging.getInstance(CheckerActivity.this);
+        }
+
+        if (regId == null) {
+            regId = googleCloudMessaging.register(Consts.PROJECT_NUMBER);
+        }
+
+        if (deviceId == null) {
+            final TelephonyManager mTelephony = (TelephonyManager) getSystemService(
+                    Context.TELEPHONY_SERVICE);
+            if (mTelephony.getDeviceId() != null) {
+                deviceId = mTelephony.getDeviceId(); //*** use for mobiles
+            } else {
+                deviceId = Settings.Secure.getString(getContentResolver(),
+                        Settings.Secure.ANDROID_ID); //*** use for tablets
+            }
+        }
     }
 
 }

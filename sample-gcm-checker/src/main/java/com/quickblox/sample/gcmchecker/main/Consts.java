@@ -55,6 +55,8 @@ public class Consts {
     public static final int STATUS_COLOR_FAIL = R.drawable.shape_oval_red;
     public static final int STATUS_COLOR_IN_PROGRESS = R.drawable.shape_oval_gray;
 
+    public static final String TASK_SUCCESS_ACTION = "success_action";
+    public static final String TASK_FAIL_ACTION = "fail_action";
 
     public static final String GCM_NOTIFICATION = "GCM Notification";
     public static final String GCM_DELETED_MESSAGE = "Deleted messages on server: ";
