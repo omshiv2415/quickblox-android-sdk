@@ -4,6 +4,7 @@ package com.quickblox.sample.gcmchecker.main.models;
  * Created by tereha on 15.09.15.
  */
 public class Report {
+    private boolean isCurrentItem;
     private int successPushes;
     private int sendedPushes;
     private int colorStatusOval;
@@ -12,6 +13,14 @@ public class Report {
 
 
     public Report() {
+    }
+
+    public boolean isCurrentItem() {
+        return isCurrentItem;
+    }
+
+    public void setIsCurrentItem(boolean isCurrentItem) {
+        this.isCurrentItem = isCurrentItem;
     }
 
     public int getSuccessPushes() {

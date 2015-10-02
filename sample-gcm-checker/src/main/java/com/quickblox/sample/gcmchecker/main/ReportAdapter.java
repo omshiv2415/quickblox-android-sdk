@@ -8,7 +8,6 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.quickblox.sample.gcmchecker.R;
-import com.quickblox.sample.gcmchecker.main.models.Credentials;
 import com.quickblox.sample.gcmchecker.main.models.Report;
 
 import java.util.ArrayList;
@@ -50,7 +49,8 @@ public class ReportAdapter extends BaseAdapter{
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.item_report, null);
             holder = new ViewHolder();
-            holder.sendResultTV = (TextView) convertView.findViewById(R.id.sendResultTV);
+            holder.countSuccessTV = (TextView) convertView.findViewById(R.id.countSuccessPushes);
+            holder.countSendedTV = (TextView) convertView.findViewById(R.id.countSendedPushes);
             holder.statusOvalTV = (TextView) convertView.findViewById(R.id.statusOvalTV);
             holder.serverTitleTV = (TextView) convertView.findViewById(R.id.serverTitleTV);
             holder.deliveryTimeTV = (TextView) convertView.findViewById(R.id.deliveryTimeTV);
@@ -64,7 +64,14 @@ public class ReportAdapter extends BaseAdapter{
         final Report report = listReports.get(position);
 
         if (report != null) {
-            holder.sendResultTV.setText(report.getSuccessPushes() + "/" + report.getSendedPushes());
+            if (report.isCurrentItem()){
+                convertView.setBackgroundResource(Consts.TEST_ITEM_BACKGROUND_COLOR);
+            } else {
+                convertView.setBackgroundResource(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
+            }
+
+            holder.countSuccessTV.setText(String.valueOf(report.getSuccessPushes()));
+            holder.countSendedTV.setText(String.valueOf(report.getSendedPushes()));
             holder.statusOvalTV.setBackgroundResource(report.getColorStatusOval());
             holder.serverTitleTV.setText(report.getServerTitle());
             holder.deliveryTimeTV.setText(report.getDeliveryDateLastPush());
@@ -76,7 +83,8 @@ public class ReportAdapter extends BaseAdapter{
 
     public static class ViewHolder {
         int viewTag;
-        TextView sendResultTV;
+        TextView countSuccessTV;
+        TextView countSendedTV;
         TextView serverTitleTV;
         TextView statusOvalTV;
         TextView deliveryTimeTV;
@@ -89,5 +97,4 @@ public class ReportAdapter extends BaseAdapter{
             this.viewTag = viewTag;
         }
     }
-
 }

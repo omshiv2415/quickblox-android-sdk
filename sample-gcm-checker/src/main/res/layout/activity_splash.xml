@@ -38,4 +38,14 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:paddingBottom="@dimen/padding_middle" />
+
+    <Button
+        android:id="@+id/tryAgainBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/try_again"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:onClick="reloadData"/>
+
 </RelativeLayout>

@@ -5,6 +5,7 @@
     <color name="green">#1cba48</color>
     <color name="blue">#0073b9</color>
     <color name="gray">#ff5a5b5f</color>
+    <color name="grey_light">#9C9C9C</color>
     <color name="white">#fff</color>
     <color name="blue_highlight">#990073b9</color>
     <color name="red_light">#ED5460</color>

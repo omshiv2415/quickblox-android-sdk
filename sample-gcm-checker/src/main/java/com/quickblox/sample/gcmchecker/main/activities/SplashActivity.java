@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 
 import com.qb.gson.JsonArray;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 public class SplashActivity extends Activity{
 
     private ProgressBar progressBar;
+    private Button tryAgainBtn;
     private final String TAG = SplashActivity.class.getSimpleName();
     public static ArrayList<Credentials> credentialsList = new ArrayList<>();
 
@@ -48,6 +50,9 @@ public class SplashActivity extends Activity{
     private void initUI() {
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         progressBar.setVisibility(View.VISIBLE);
+        tryAgainBtn = (Button) findViewById(R.id.tryAgainBtn);
+        tryAgainBtn.setVisibility(View.GONE);
+
     }
 
     private void startTaskLoadData() {
@@ -64,6 +69,7 @@ public class SplashActivity extends Activity{
                 } else {
                     DialogUtils.showLong(getApplicationContext(), getString(R.string.error_loading_data));
                     progressBar.setVisibility(View.INVISIBLE);
+                    tryAgainBtn.setVisibility(View.VISIBLE);
                 }
             }
         }.execute(null, null, null);
@@ -112,5 +118,11 @@ public class SplashActivity extends Activity{
         Intent intent = new Intent(SplashActivity.this, CheckerActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    public void reloadData(View view) {
+        tryAgainBtn.setVisibility(View.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+        startTaskLoadData();
     }
 }

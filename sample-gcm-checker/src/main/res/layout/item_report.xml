@@ -1,46 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/white"
     android:gravity="center_vertical"
-    android:padding="5dp">
+    android:orientation="horizontal"
+    android:padding="8dp">
+
 
     <TextView
-        android:id="@+id/sendResultTV"
-        android:layout_width="60dp"
+        android:id="@+id/countSuccessPushes"
+        android:layout_width="30dp"
         android:layout_height="wrap_content"
-        android:text="0/0"
+        android:gravity="right"
+        android:maxLines="1"
+        android:text=""
         android:textColor="@android:color/black"
-        android:textSize="8pt"
-        android:gravity="center_horizontal"/>
+        android:textSize="7pt" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="/"
+        android:textColor="@android:color/black"
+        android:textSize="7pt" />
+
+    <TextView
+        android:id="@+id/countSendedPushes"
+        android:layout_width="30dp"
+        android:layout_height="wrap_content"
+        android:gravity="left"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="@android:color/black"
+        android:textSize="7pt" />
 
     <TextView
         android:id="@+id/statusOvalTV"
         android:layout_width="25dp"
         android:layout_height="25dp"
-        android:background="@drawable/shape_oval_gray"
-        />
+        android:background="@drawable/shape_oval_gray" />
 
     <TextView
         android:id="@+id/serverTitleTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:paddingLeft="7dp"
         android:text=""
         android:textColor="@android:color/black"
-        android:textSize="8pt"
-        android:maxLines="1"
-        android:gravity="left"
-        android:paddingLeft="10dp"/>
+        android:textSize="7pt" />
 
     <TextView
         android:id="@+id/deliveryTimeTV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:gravity="right"
         android:text=""
         android:textColor="@android:color/black"
-        android:textSize="8pt"
-        android:gravity="right"/>
+        android:textSize="7pt" />
 
 </LinearLayout>

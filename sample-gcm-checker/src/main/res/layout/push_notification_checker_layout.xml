@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_color"
-    android:keepScreenOn="true">
+    android:divider="@android:color/transparent"
+    android:keepScreenOn="true"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,25 +16,17 @@
             android:id="@+id/startCheckerBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:background="@android:color/holo_green_light"
-            android:text="@string/start_checker"
-            android:onClick="startCheckerClick"/>
+            android:layout_weight="1"
+            android:onClick="startCheckerClick"
+            android:text="@string/start_checker" />
+
+
         <ProgressBar
             android:id="@+id/startCheckerPB"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:color/holo_green_light"
-            android:visibility="gone"/>
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/holo_red_light"
-            android:text="@string/stop_checker"
-            android:onClick="stopCheckerClick"/>
+            android:layout_weight="1" />
     </LinearLayout>
-
 
 
     <ListView

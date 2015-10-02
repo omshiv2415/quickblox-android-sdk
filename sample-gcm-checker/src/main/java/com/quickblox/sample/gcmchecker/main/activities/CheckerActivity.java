@@ -9,7 +9,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
@@ -25,7 +24,6 @@ import android.widget.TextView;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.quickblox.auth.QBAuth;
-import com.quickblox.auth.model.QBSession;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.QBSettings;
 import com.quickblox.core.exception.QBResponseException;
@@ -35,7 +33,6 @@ import com.quickblox.messages.QBMessages;
 import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBEvent;
 import com.quickblox.messages.model.QBNotificationType;
-import com.quickblox.messages.model.QBSubscription;
 import com.quickblox.sample.gcmchecker.QuerySendReport;
 import com.quickblox.sample.gcmchecker.R;
 import com.quickblox.sample.gcmchecker.main.Consts;
@@ -74,11 +71,12 @@ public class CheckerActivity extends AppCompatActivity {
     private ArrayList<Report> reportList;
     private int desiredPushId;
     private ArrayList<Credentials> credentialsList;
-    private Handler checkServerTaskHandler;
-    private Runnable checkServerTask;
+    private Handler checkServerTimerTaskHandler;
+    private Runnable checkServerTimerTask;
     private int indexCurrentServer = -1;
     private String deviceId;
-    private CheckServerTask checkServerTask1;
+    private CheckServerTask checkServerTask;
+    private String currentTestStep;
 
 
     @Override
@@ -133,6 +131,7 @@ public class CheckerActivity extends AppCompatActivity {
         });
         startCheckerBtn = (Button) findViewById(R.id.startCheckerBtn);
         checkerPB = (ProgressBar) findViewById(R.id.startCheckerPB);
+        checkerPB.setVisibility(View.INVISIBLE);
     }
 
     public Credentials getCurrentCredentials() {
@@ -152,10 +151,9 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     public void startCheckerClick(View view) {
-        if (checkServerTaskHandler == null){
+        if (checkServerTimerTaskHandler == null){
             initCheckServerTask();
         }
-
         startCheckServer();
     }
 
@@ -166,15 +164,19 @@ public class CheckerActivity extends AppCompatActivity {
             indexCurrentServer++;
         }
 
-        checkerPB.setVisibility(View.VISIBLE);
+        if (checkerPB.getVisibility()!= View.VISIBLE){
+            checkerPB.setVisibility(View.VISIBLE);
+        }
+
+        startCheckerBtn.setClickable(false);
+        startCheckerBtn.setEnabled(false);
+        setColorCurrentItem(Consts.TEST_ITEM_BACKGROUND_COLOR);
         setDesiredPushId(0);
         Credentials credentials = credentialsList.get(indexCurrentServer);
         setCurrentCredentials(credentials);
 
         startCheckTimer();
         startServerTest();
-//        initApp();
-//        createSession();
     }
 
     private void startServerTest() {
@@ -183,8 +185,12 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private void startTestTask() {
-        CheckServerTask checkServerTask1 = new CheckServerTask();
-        checkServerTask1.execute();
+        if (checkServerTask != null){
+            checkServerTask.cancel(true);
+            checkServerTask = null;
+        }
+        checkServerTask = new CheckServerTask();
+        checkServerTask.execute();
     }
 
     private void initApp (){
@@ -204,117 +210,6 @@ public class CheckerActivity extends AppCompatActivity {
             QBSettings.getInstance().setServerApiDomain(serverApiDomain);
         }
         QBSettings.getInstance().fastConfigInit(appId.toString(), authKey, authSecret);
-    }
-
-    private void createSession () {
-        String userLogin = getCurrentCredentials().getUserLogin();
-        String userPass = getCurrentCredentials().getUserPass();
-
-        final QBUser qbUser = new QBUser();
-        qbUser.setLogin(userLogin);
-        qbUser.setPassword(userPass);
-
-        QBAuth.createSession(qbUser, new QBEntityCallbackImpl<QBSession>() {
-            @Override
-            public void onSuccess(QBSession qbSession, Bundle bundle) {
-                subscribeToPushNotifications();
-            }
-
-            @Override
-            public void onError(List<String> strings) {
-                stopCheckTimer();
-                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                for (String s : strings) {
-                    Log.d(TAG, "Error subscribing " + s);
-                    saveTestResult(s);
-                }
-                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServer();
-            }
-        });
-    }
-
-    private void subscribeToPushNotifications() {
-        Log.d(TAG, "subscribing...");
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    if (googleCloudMessaging == null) {
-                        googleCloudMessaging = GoogleCloudMessaging.getInstance(CheckerActivity.this);
-                    }
-                    regId = googleCloudMessaging.register(Consts.PROJECT_NUMBER);
-
-                    Handler h = new Handler(getMainLooper());
-                    h.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            String deviceId;
-
-                            final TelephonyManager mTelephony = (TelephonyManager) getSystemService(
-                                    Context.TELEPHONY_SERVICE);
-                            if (mTelephony.getDeviceId() != null) {
-                                deviceId = mTelephony.getDeviceId(); //*** use for mobiles
-                            } else {
-                                deviceId = Settings.Secure.getString(getContentResolver(),
-                                        Settings.Secure.ANDROID_ID); //*** use for tablets
-                            }
-
-                            QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT, new QBEntityCallbackImpl<ArrayList<QBSubscription>>() {
-                                @Override
-                                public void onSuccess(ArrayList<QBSubscription> subscriptions, Bundle args) {
-                                    Log.d(TAG, "subscribed");
-                                    sendPushNotification(createPushNotificationEvent());
-                                }
-
-                                @Override
-                                public void onError(List<String> errors) {
-                                    stopCheckTimer();
-                                    setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                                    for (String s : errors){
-                                        Log.d(TAG, "Error subscribing " + s);
-                                        saveTestResult(s);
-                                    }
-                                    sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                                    startCheckServer();
-                                }
-                            });
-                        }
-                    });
-                } catch (IOException ex) {
-                    stopCheckTimer();
-                    saveTestResult(ex.getMessage());
-                    sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                    startCheckServer();
-                }
-                return null;
-            }
-        }.execute(null, null, null);
-    }
-
-    public void sendPushNotification(QBEvent qbEvent){
-//        QBMessages.createEvent(qbEvent, new QBEntityCallbackImpl<QBEvent>() {
-//            @Override
-//            public void onSuccess(QBEvent qbEvent, Bundle bundle) {
-//                addSendedPushToReport();
-//                Log.d(TAG, "pushSended");
-//                checkerPB.setVisibility(View.GONE);
-//            }
-//
-//            @Override
-//            public void onError(List<String> strings) {
-//                stopCheckTimer();
-//                Log.d(TAG, "pushErrorSend" + strings.toString());
-//                checkerPB.setVisibility(View.GONE);
-//                DialogUtils.show(CheckerActivity.this, strings.toString());
-//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-//                for (String s : strings) {
-//                    saveTestResult("Error" + s);
-//                }
-//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-//                startCheckServer();
-//            }
-//        });
     }
 
     public QBEvent createPushNotificationEvent(){
@@ -358,6 +253,7 @@ public class CheckerActivity extends AppCompatActivity {
             boolean isDesiredPush = false;
             if (pushId != null) {
                 isDesiredPush = Integer.parseInt(pushId) == getDesiredPushId();
+                setDesiredPushId(0);
             }
             Log.d(TAG, "pushId = " + pushId);
 
@@ -368,7 +264,6 @@ public class CheckerActivity extends AppCompatActivity {
                 }
             }
         }
-
     };
 
     private void processingMessage(String serverTitle,String sendDate, String deliveryDate) {
@@ -395,13 +290,13 @@ public class CheckerActivity extends AppCompatActivity {
         setDeliveryTime(currentDateText);
         addSuccessPushToReport();
 
-
         saveTestResult("Timeout = " + travelingDateText + " ms");
 
         if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
             sendResultToServer(serverTitle, deliveryDate, travelingTime);
         }
 
+        setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
         startCheckServer();
     }
 
@@ -436,16 +331,6 @@ public class CheckerActivity extends AppCompatActivity {
         );
     }
 
-
-    public void stopCheckerClick(View view) {
-        checkerPB.setVisibility(View.GONE);
-        stopCheckTimer();
-        checkServerTaskHandler = null;
-        checkServerTask = null;
-    }
-
-
-
     private void saveTestResult(String errorMessage){
         if (errorMessage.equals("")){
             errorMessage = "Unknown error";
@@ -456,7 +341,7 @@ public class CheckerActivity extends AppCompatActivity {
 
         String serverTitle = getCurrentCredentials().getTitle();
 
-        ResultTests resultTests = new ResultTests(serverTitle + " " + currentDate, errorMessage);
+        ResultTests resultTests = new ResultTests(currentDate, errorMessage);
 
         if (resultsMap == null) {
             resultsMap = new HashMap<>();
@@ -470,6 +355,25 @@ public class CheckerActivity extends AppCompatActivity {
         }
 
         errorItem.add(0, resultTests);
+    }
+
+    private void setColorCurrentItem(int backgroundColor){
+        int index = indexCurrentServer;
+
+        if (backgroundColor==Consts.TEST_ITEM_BACKGROUND_COLOR) {
+            reportAdapter.getItem(index).setIsCurrentItem(true);
+        } else {
+            reportAdapter.getItem(index).setIsCurrentItem(false);
+        }
+
+        View view = serversListView.getChildAt(index);
+        if (view != null) {
+            ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
+            if (viewHolder.getViewTag() == index) {
+                view.setBackgroundResource(backgroundColor);
+            }
+        }
+        reportAdapter.notifyDataSetChanged();
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -500,7 +404,7 @@ public class CheckerActivity extends AppCompatActivity {
         reportAdapter.notifyDataSetChanged();
     }
 
-    private void addSendedPushToReport (){
+    synchronized private void addSendedPushToReport (){
         int index = indexCurrentServer;
         reportAdapter.getItem(index).setSendedPushes(reportAdapter.getItem(index).getSendedPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSendedPushes();
@@ -508,14 +412,14 @@ public class CheckerActivity extends AppCompatActivity {
         if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
-                TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
-                textView.setText(reportAdapter.getItem(index).getSuccessPushes() + "/" + newCount);
+                TextView textView = (TextView) view.findViewById(R.id.countSendedPushes);
+                textView.setText(String.valueOf(newCount));
             }
         }
         reportAdapter.notifyDataSetChanged();
     }
 
-    private void addSuccessPushToReport (){
+    synchronized private void addSuccessPushToReport (){
         int index = indexCurrentServer;
         reportAdapter.getItem(index).setSuccessPushes(reportAdapter.getItem(index).getSuccessPushes() + 1);
         int newCount = reportAdapter.getItem(index).getSuccessPushes();
@@ -523,37 +427,37 @@ public class CheckerActivity extends AppCompatActivity {
         if (view != null) {
             ReportAdapter.ViewHolder viewHolder = (ReportAdapter.ViewHolder) view.getTag();
             if (viewHolder.getViewTag() == index) {
-                TextView textView = (TextView) view.findViewById(R.id.sendResultTV);
-                textView.setText(newCount + "/" + reportAdapter.getItem(index).getSendedPushes());
+                TextView textView = (TextView) view.findViewById(R.id.countSuccessPushes);
+                textView.setText(String.valueOf(newCount));
             }
         }
         reportAdapter.notifyDataSetChanged();
     }
 
     private void initCheckServerTask() {
-        checkServerTaskHandler = new Handler(Looper.myLooper());
-        checkServerTask = new Runnable() {
+        checkServerTimerTaskHandler = new Handler(getMainLooper());
+        checkServerTimerTask = new Runnable() {
             @Override
             public void run() {
-//                checkServerTask1.cancel(true);
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                saveTestResult("Push timeout");
+                saveTestResult(currentTestStep + " timeout");
                 sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+                setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
                 startCheckServer();
             }
         };
     }
 
     private void startCheckTimer() {
-        if (checkServerTaskHandler != null) {
-            checkServerTaskHandler.postAtTime(checkServerTask, SystemClock.uptimeMillis() + Consts.PUSH_TIMEOUT);
+        if (checkServerTimerTaskHandler != null) {
+            checkServerTimerTaskHandler.postAtTime(checkServerTimerTask, SystemClock.uptimeMillis() + Consts.PUSH_TIMEOUT);
         }
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void stopCheckTimer() {
-        if (checkServerTaskHandler != null) {
-            checkServerTaskHandler.removeCallbacks(checkServerTask);
+        if (checkServerTimerTaskHandler != null) {
+            checkServerTimerTaskHandler.removeCallbacks(checkServerTimerTask);
         }
     }
 
@@ -562,58 +466,6 @@ public class CheckerActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
 
         super.onDestroy();
-    }
-
-    private class CheckServerTask extends AsyncTask <Void, String, Void> {
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                initGCMInstances();
-
-                QBAuth.createSession(new QBUser(getCurrentCredentials().getUserLogin(),
-                        getCurrentCredentials().getUserPass()));
-
-                QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT);
-
-                QBMessages.createEvent(createPushNotificationEvent());
-                publishProgress(Consts.TASK_SUCCESS_ACTION);
-
-
-            } catch (QBResponseException e) {
-                e.printStackTrace();
-                publishProgress(Consts.TASK_FAIL_ACTION);
-//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                saveTestResult(e.getMessage());
-//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-//                startCheckServer();
-            } catch (IOException e){
-                e.printStackTrace();
-                publishProgress(Consts.TASK_FAIL_ACTION);
-//                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                saveTestResult(e.getMessage());
-//                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-//                startCheckServer();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... params) {
-            if (params[0].equals(Consts.TASK_SUCCESS_ACTION)) {
-                addSendedPushToReport();
-            } else {
-                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
-                startCheckServer();
-            }
-            super.onProgressUpdate();
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-        }
     }
 
     private void initGCMInstances() throws IOException {
@@ -637,4 +489,71 @@ public class CheckerActivity extends AppCompatActivity {
         }
     }
 
+    private class CheckServerTask extends AsyncTask <Void, String, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                initGCMInstances();
+
+                if (!isCancelled()) {
+                    currentTestStep = Consts.STEP_CREATE_SESSION;
+                    Log.d(TAG, currentTestStep);
+                    QBAuth.createSession(new QBUser(getCurrentCredentials().getUserLogin(),
+                            getCurrentCredentials().getUserPass()));
+                }
+
+                if (!isCancelled()) {
+                    currentTestStep = Consts.STEP_SUBSCRIBE_TO_PUSH;
+                    Log.d(TAG, currentTestStep);
+                    QBMessages.subscribeToPushNotificationsTask(regId, deviceId, QBEnvironment.DEVELOPMENT);
+                }
+
+                if (!isCancelled()) {
+                    currentTestStep = Consts.STEP_CREATE_EVENT;
+                    Log.d(TAG, currentTestStep);
+                    QBMessages.createEvent(createPushNotificationEvent());
+                }
+
+                if (!isCancelled()) {
+                    currentTestStep = Consts.STEP_PUSH_SENDED;
+                    Log.d(TAG, currentTestStep);
+                    publishProgress(Consts.TASK_SUCCESS_ACTION);
+                }
+            } catch (QBResponseException e) {
+                if (!isCancelled()) {
+                    Log.d(TAG, e.getMessage());
+                    e.printStackTrace();
+                    saveTestResult(e.getMessage());
+                    publishProgress(Consts.TASK_FAIL_ACTION);
+                }
+            } catch (IOException e){
+                if (!isCancelled()) {
+                    Log.d(TAG, e.getMessage());
+                    e.printStackTrace();
+                    saveTestResult(e.getMessage());
+                    publishProgress(Consts.TASK_FAIL_ACTION);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... params) {
+            if (params[0].equals(Consts.TASK_SUCCESS_ACTION)) {
+                addSendedPushToReport();
+            } else {
+                setColorStatusOval(Consts.STATUS_COLOR_FAIL);
+                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+                setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
+                startCheckServer();
+            }
+            super.onProgressUpdate();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+    }
 }
