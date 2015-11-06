@@ -44,12 +44,18 @@ public class Consts {
     public static final String INSTANCES_USER_PASSWORD = "userPass";
     public static final String INSTANCES_SERVER_API_DOMAIN = "serverApiDomain";
 
-    public static final String REPORT_URL = "http://status.quickblox.com/admin/push";
-    public static final String REPORT_PARAMETER_SERVER = "server";
-    public static final String REPORT_PARAMETER_PUSH_TIME = "pushtime";
+    public static final String REPORT_URL = "http://statuscopy.quickblox.com/admin/push/save";
+    public static final String REPORT_PARAMETER_SERVER = "instance";
+    public static final String REPORT_PARAMETER_PUSH_TIME = "time";
     public static final String REPORT_PARAMETER_PLATFORM = "platform";
     public static final String PLATFORM_VALUE = "android";
     public static final String REPORT_PARAMETER_PUSH_TIMEOUT = "timeout";
+    public static final String REPORT_PARAMETER_ERROR = "error";
+    public static final String REPORT_PARAMETER_ERROR_CODE = "error[code]";
+    public static final String REPORT_PARAMETER_ERROR_STATUS = "error[status]";
+    public static final String REPORT_PARAMETER_ERROR_MESSAGE = "error[message]";
+    public static final String REPORT_PARAMETER_ERROR_DETAILS = "error[details]";
+
 
     public static final int STATUS_COLOR_SUCCESS = R.drawable.shape_oval_green;
     public static final int STATUS_COLOR_FAIL = R.drawable.shape_oval_red;

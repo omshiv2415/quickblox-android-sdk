@@ -77,6 +77,7 @@ public class CheckerActivity extends AppCompatActivity {
     private String deviceId;
     private CheckServerTask checkServerTask;
     private String currentTestStep;
+    public QBResponseException exception;
 
 
     @Override
@@ -290,45 +291,26 @@ public class CheckerActivity extends AppCompatActivity {
         setDeliveryTime(currentDateText);
         addSuccessPushToReport();
 
-        saveTestResult("Timeout = " + travelingDateText + " ms");
+        saveTestResult("Push time = " + travelingDateText + " ms");
 
         if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
-            sendResultToServer(serverTitle, deliveryDate, travelingTime);
+            sendResultToServer(serverTitle, travelingTime, null);
         }
 
         setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
         startCheckServer();
     }
 
-    private void sendResultToServer(String serverTitle, String deliveryDate, long travelingTime) {
-        if (deliveryDate == null){
-            deliveryDate = String.valueOf(System.currentTimeMillis());
+    private void sendResultToServer(String serverTitle, long pushTime, QBResponseException exception) {
+        QuerySendReport querySendReport;
+
+        if (exception != null){
+            querySendReport = new QuerySendReport(serverTitle, exception);
+        } else {
+            querySendReport = new QuerySendReport(serverTitle, pushTime);
         }
 
-        QuerySendReport querySendReport = new QuerySendReport(
-                serverTitle,
-                deliveryDate,
-                travelingTime);
-        querySendReport.performAsyncWithCallback(new QBEntityCallbackImpl<Void>() {
-                                                     @Override
-                                                     public void onSuccess(Void result, Bundle params) {
-                                                         Log.d(TAG, "send report result - onSuccess(Object result, Bundle params) " + result.toString());
-                                                     }
-
-                                                     @Override
-                                                     public void onSuccess() {
-                                                         Log.d(TAG, "send report result - onSuccess() ");
-//                                                         saveTestResult("The result has been successfully sent to the server");
-                                                     }
-
-                                                     @Override
-                                                     public void onError(List errors) {
-                                                         Log.d(TAG, "send report result - onError(List errors) " + errors.toString());
-//                                                         saveTestResult("Error sending data to the server" + errors.toString());
-                                                     }
-                                                 }
-
-        );
+        querySendReport.performAsyncWithCallback(new QBEntityCallbackImpl<Void>());
     }
 
     private void saveTestResult(String errorMessage){
@@ -440,8 +422,8 @@ public class CheckerActivity extends AppCompatActivity {
             @Override
             public void run() {
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                saveTestResult(currentTestStep + " timeout");
-                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+                saveTestResult("Timeout");
+                sendResultToServer(getCurrentCredentials().getTitle(), -1, null);
                 setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
                 startCheckServer();
             }
@@ -525,6 +507,7 @@ public class CheckerActivity extends AppCompatActivity {
                     Log.d(TAG, e.getMessage());
                     e.printStackTrace();
                     saveTestResult(e.getMessage());
+                     exception = e;/*sendResultToServer(getCurrentCredentials().getTitle(), -1, e);*/
                     publishProgress(Consts.TASK_FAIL_ACTION);
                 }
             } catch (IOException e){
@@ -532,6 +515,7 @@ public class CheckerActivity extends AppCompatActivity {
                     Log.d(TAG, e.getMessage());
                     e.printStackTrace();
                     saveTestResult(e.getMessage());
+//                    sendResultToServer(getCurrentCredentials().getTitle(), -1, e);
                     publishProgress(Consts.TASK_FAIL_ACTION);
                 }
             }
@@ -544,7 +528,8 @@ public class CheckerActivity extends AppCompatActivity {
                 addSendedPushToReport();
             } else {
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                sendResultToServer(getCurrentCredentials().getTitle(), null, -1);
+                sendResultToServer(getCurrentCredentials().getTitle(), -1, exception);
+                exception = null;
                 setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
                 startCheckServer();
             }
