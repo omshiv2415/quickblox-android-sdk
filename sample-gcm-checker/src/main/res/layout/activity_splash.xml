@@ -44,8 +44,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/try_again"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:onClick="reloadData"/>
+        android:onClick="onClick"
+        android:layout_above="@id/progress_bar"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/runByOldData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/run_test_by_old_data"
+        android:onClick="onClick"
+        android:layout_below="@id/tryAgainBtn"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

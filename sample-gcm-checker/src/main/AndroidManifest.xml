@@ -25,6 +25,7 @@
         </activity>
         
         <activity android:name=".main.activities.CheckerActivity"
+            android:icon="@drawable/app_icon"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".main.activities.ResultTestsActivity"

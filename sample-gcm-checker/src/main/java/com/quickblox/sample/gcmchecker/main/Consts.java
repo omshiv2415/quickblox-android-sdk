@@ -26,6 +26,8 @@ public class Consts {
 //    public static final String PROJECT_NUMBER = "287747642439";
     public static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
+    public static final String EMPTY_STRING = "";
+
     public static final String EXTRA_MESSAGE = "message";
     public static final String EXTRA_PUSH_ID = "id";
     public static final String EXTRA_DELIVERY_DATE = "deliveryDate";
@@ -83,5 +85,18 @@ public class Consts {
     public static final String QBEVENT_EXTRAS = "qbEventExtras";
     public static final String NEW_PUSH_BUNDLE = "newPushBundle";
 
+    public static final String DB_NAME = "checkerDB";
+    public static final String DB_TABLE_NAME = "credentials";
+    public static final String DB_COLUMN_ID = "ID";
+    public static final String DB_COLUMN_TITLE = "title";
+    public static final String DB_COLUMN_APP_ID = "appId";
+    public static final String DB_COLUMN_AUTH_KEY = "authKey";
+    public static final String DB_COLUMN_AUTH_SECRET = "authSecret";
+    public static final String DB_COLUMN_USER_LOGIN = "userLogin";
+    public static final String DB_COLUMN_USER_ID = "userID";
+    public static final String DB_COLUMN_USER_PASSWORD = "userPass";
+    public static final String DB_COLUMN_SERVER_API_DOMAIN = "serverApiDomain";
 
+
+    public static final String PREFS_DATE_UPDATE = "dateUpdate";
 }

@@ -1,8 +1,11 @@
 package com.quickblox.sample.gcmchecker.main.activities;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
@@ -15,12 +18,17 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.quickblox.auth.QBAuth;
@@ -37,6 +45,7 @@ import com.quickblox.sample.gcmchecker.QuerySendReport;
 import com.quickblox.sample.gcmchecker.R;
 import com.quickblox.sample.gcmchecker.main.Consts;
 import com.quickblox.sample.gcmchecker.main.ReportAdapter;
+import com.quickblox.sample.gcmchecker.main.helper.CredentialsDBManager;
 import com.quickblox.sample.gcmchecker.main.models.Credentials;
 import com.quickblox.sample.gcmchecker.main.models.Report;
 import com.quickblox.sample.gcmchecker.main.models.ResultTests;
@@ -52,7 +61,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -84,6 +92,9 @@ public class CheckerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.push_notification_checker_layout);
+
+        credentialsList = CredentialsDBManager.getAllCredetntials(this);
+
         prepareData();
         initUI();
 
@@ -92,12 +103,14 @@ public class CheckerActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mPushReceiver,
                 new IntentFilter(Consts.NEW_PUSH_EVENT));
 
-        Log.d(TAG, "Downloaded information about " + String.valueOf(SplashActivity.credentialsList.size()) + " servers");
-
+        if (checkServerTimerTaskHandler == null){
+            initCheckServerTask();
+        }
+        startCheckServer();
     }
 
     private void prepareData(){
-        credentialsList = SplashActivity.credentialsList;
+//        credentialsList = CredentialsDBManager.getAllCredetntials(this);
         reportList = new ArrayList<>();
         for (Credentials credentials : credentialsList){
             Report report = new Report();
@@ -130,9 +143,9 @@ public class CheckerActivity extends AppCompatActivity {
                 }
             }
         });
-        startCheckerBtn = (Button) findViewById(R.id.startCheckerBtn);
-        checkerPB = (ProgressBar) findViewById(R.id.startCheckerPB);
-        checkerPB.setVisibility(View.INVISIBLE);
+//        startCheckerBtn = (Button) findViewById(R.id.startCheckerBtn);
+//        checkerPB = (ProgressBar) findViewById(R.id.startCheckerPB);
+//        checkerPB.setVisibility(View.INVISIBLE);
     }
 
     public Credentials getCurrentCredentials() {
@@ -159,18 +172,19 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private void startCheckServer() {
+
         if (indexCurrentServer == credentialsList.size() - 1) {
             indexCurrentServer = 0;
         } else {
             indexCurrentServer++;
         }
 
-        if (checkerPB.getVisibility()!= View.VISIBLE){
-            checkerPB.setVisibility(View.VISIBLE);
-        }
+//        if (checkerPB.getVisibility()!= View.VISIBLE){
+//            checkerPB.setVisibility(View.VISIBLE);
+//        }
 
-        startCheckerBtn.setClickable(false);
-        startCheckerBtn.setEnabled(false);
+//        startCheckerBtn.setClickable(false);
+//        startCheckerBtn.setEnabled(false);
         setColorCurrentItem(Consts.TEST_ITEM_BACKGROUND_COLOR);
         setDesiredPushId(0);
         Credentials credentials = credentialsList.get(indexCurrentServer);
@@ -272,11 +286,6 @@ public class CheckerActivity extends AppCompatActivity {
         long currentTimeMillis = Long.parseLong(deliveryDate);
         Date dateSend = new Date (timeFromMessage);
         Date currentDate = new Date (currentTimeMillis);
-//                "yyyy-MM-dd",
-//                "yyyy-MM-dd HH:mm",
-//                "yyyy-MM-dd HH:mmZ",
-//                "yyyy-MM-dd HH:mm:ss.SSSZ",
-//                "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
         SimpleDateFormat df2 = new SimpleDateFormat("HH:mm:ss.SSS");
         String dateSendText = df2.format(dateSend);
         String currentDateText = df2.format(currentDate);
@@ -438,15 +447,23 @@ public class CheckerActivity extends AppCompatActivity {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void stopCheckTimer() {
+        Log.d(TAG, "stopCheckTimer()");
         if (checkServerTimerTaskHandler != null) {
             checkServerTimerTaskHandler.removeCallbacks(checkServerTimerTask);
+        }
+    }
+
+    private void stopTestTask() {
+        Log.d(TAG, "stopTestTask()");
+        if (checkServerTask != null) {
+            checkServerTask.cancel(true);
+            checkServerTask = null;
         }
     }
 
     @Override
     protected void onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mPushReceiver);
-
         super.onDestroy();
     }
 
@@ -502,6 +519,10 @@ public class CheckerActivity extends AppCompatActivity {
                     Log.d(TAG, currentTestStep);
                     publishProgress(Consts.TASK_SUCCESS_ACTION);
                 }
+
+                if (!isCancelled()) {
+                    QBAuth.deleteSession();
+                }
             } catch (QBResponseException e) {
                 if (!isCancelled()) {
                     Log.d(TAG, e.getMessage());
@@ -539,6 +560,101 @@ public class CheckerActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        showExitDialog();
+    }
+
+    private void showExitDialog(){
+        AlertDialog.Builder quitDialog = new AlertDialog.Builder(this);
+        quitDialog.setTitle(R.string.log_out_dialog_title);
+        quitDialog.setMessage(R.string.log_out_dialog_message);
+        quitDialog.setPositiveButton(R.string.positive_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                stopCheckTimer();
+                stopTestTask();
+                finish();
+            }
+        });
+        quitDialog.setNegativeButton(R.string.negative_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+        quitDialog.show();
+    }
+
+    protected Dialog createDialog() {
+        ArrayList<Credentials> allCredentials = CredentialsDBManager.getAllCredetntials(this);
+        String [] dataForDialog = new String[allCredentials.size()];
+
+        for (int i = 0; i<=allCredentials.size()-1; i++){
+            dataForDialog[i] = allCredentials.get(i).getTitle();
+        }
+        final AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setTitle(R.string.title_dialog_select_servers);
+        adb.setMultiChoiceItems(dataForDialog, null, null);
+        adb.setPositiveButton(R.string.run_test, myBtnClickListener);
+        adb.setNegativeButton(R.string.negative_button, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        return adb.create();
+    }
+
+    DialogInterface.OnClickListener myBtnClickListener = new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int which) {
+            SparseBooleanArray sbArray = ((AlertDialog)dialog).getListView().getCheckedItemPositions();
+            ArrayList<Credentials> allCredentials = CredentialsDBManager.getAllCredetntials(CheckerActivity.this);
+            ArrayList<Credentials> newCredentialList = new ArrayList<>();
+            for (int i = 0; i < sbArray.size(); i++) {
+                int key = sbArray.keyAt(i);
+                if (sbArray.get(key)){
+                   newCredentialList.add(allCredentials.get(key));
+                }
+            }
+
+            if (newCredentialList.size()>0) {
+                stopCheckTimer();
+                stopTestTask();
+                credentialsList = newCredentialList;
+                indexCurrentServer = -1;
+                prepareData();
+                initUI();
+                if (checkServerTimerTaskHandler == null) {
+                    initCheckServerTask();
+                }
+                startCheckServer();
+            } else {
+                Toast.makeText(CheckerActivity.this, getString(R.string.not_selected_server), Toast.LENGTH_LONG).show();
+            }
+        }
+    };
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+//                finish();
+//                return true;
+            case R.id.select_servers:
+                createDialog().show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }
