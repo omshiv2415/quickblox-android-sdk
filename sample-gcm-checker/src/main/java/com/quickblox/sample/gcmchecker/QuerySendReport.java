@@ -7,6 +7,7 @@ import com.quickblox.core.query.JsonQuery;
 import com.quickblox.core.rest.RestRequest;
 import com.quickblox.sample.gcmchecker.main.Consts;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -36,12 +37,14 @@ public class QuerySendReport extends JsonQuery<Void> {
         }
     }
 
-    public QuerySendReport(String serverTitle, QBResponseException qbResponseException){
+    public QuerySendReport(String serverTitle, IOException qbException){
         this();
         this.serverTitle = serverTitle;
         this.pushTime = -1;
-        this.errorCode = qbResponseException.getHttpStatusCode();
-        this.errorMessage = qbResponseException.getMessage();
+        if (qbException instanceof QBResponseException) {
+            this.errorCode = ((QBResponseException)qbException).getHttpStatusCode();
+        }
+        this.errorMessage = qbException.getMessage();
     }
 
     public QuerySendReport(String serverTitle) {

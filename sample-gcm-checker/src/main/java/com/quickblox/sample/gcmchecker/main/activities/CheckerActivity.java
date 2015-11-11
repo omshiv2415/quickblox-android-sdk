@@ -1,6 +1,7 @@
 package com.quickblox.sample.gcmchecker.main.activities;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -15,14 +16,17 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.util.SparseBooleanArray;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
@@ -30,6 +34,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.data.DataHolder;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.core.QBEntityCallbackImpl;
@@ -85,13 +90,14 @@ public class CheckerActivity extends AppCompatActivity {
     private String deviceId;
     private CheckServerTask checkServerTask;
     private String currentTestStep;
-    public QBResponseException exception;
+    public IOException exception;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.push_notification_checker_layout);
+        initActionBar();
 
         credentialsList = CredentialsDBManager.getAllCredetntials(this);
 
@@ -268,11 +274,12 @@ public class CheckerActivity extends AppCompatActivity {
             boolean isDesiredPush = false;
             if (pushId != null) {
                 isDesiredPush = Integer.parseInt(pushId) == getDesiredPushId();
-                setDesiredPushId(0);
             }
             Log.d(TAG, "pushId = " + pushId);
+            Log.d(TAG, "desiredPushID = " + getDesiredPushId());
 
             if (sendDate != null && deliveryDate != null && serverTitle != null && isDesiredPush) {
+                setDesiredPushId(0);
                 if (serverTitle.equals(getCurrentCredentials().getTitle())) {
                     stopCheckTimer();
                     processingMessage(serverTitle, sendDate, deliveryDate);
@@ -300,7 +307,7 @@ public class CheckerActivity extends AppCompatActivity {
         setDeliveryTime(currentDateText);
         addSuccessPushToReport();
 
-        saveTestResult("Push time = " + travelingDateText + " ms");
+        saveTestResult("Delivery time = " + travelingDateText + " ms");
 
         if (!StringUtils.isEmpty(serverTitle) && !StringUtils.isEmpty(deliveryDate)) {
             sendResultToServer(serverTitle, travelingTime, null);
@@ -310,7 +317,7 @@ public class CheckerActivity extends AppCompatActivity {
         startCheckServer();
     }
 
-    private void sendResultToServer(String serverTitle, long pushTime, QBResponseException exception) {
+    private void sendResultToServer(String serverTitle, long pushTime, IOException exception) {
         QuerySendReport querySendReport;
 
         if (exception != null){
@@ -430,8 +437,13 @@ public class CheckerActivity extends AppCompatActivity {
         checkServerTimerTask = new Runnable() {
             @Override
             public void run() {
+                setDesiredPushId(0);
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
-                saveTestResult("Timeout");
+                if (currentTestStep.equals(Consts.STEP_PUSH_SENDED)){
+                    saveTestResult("Timeout");
+                } else {
+                    saveTestResult("Timeout " + currentTestStep);
+                }
                 sendResultToServer(getCurrentCredentials().getTitle(), -1, null);
                 setColorCurrentItem(Consts.NORMAL_ITEM_BACKGROUND_COLOR);
                 startCheckServer();
@@ -519,16 +531,12 @@ public class CheckerActivity extends AppCompatActivity {
                     Log.d(TAG, currentTestStep);
                     publishProgress(Consts.TASK_SUCCESS_ACTION);
                 }
-
-                if (!isCancelled()) {
-                    QBAuth.deleteSession();
-                }
             } catch (QBResponseException e) {
                 if (!isCancelled()) {
                     Log.d(TAG, e.getMessage());
                     e.printStackTrace();
                     saveTestResult(e.getMessage());
-                     exception = e;/*sendResultToServer(getCurrentCredentials().getTitle(), -1, e);*/
+                    exception = e;
                     publishProgress(Consts.TASK_FAIL_ACTION);
                 }
             } catch (IOException e){
@@ -536,7 +544,7 @@ public class CheckerActivity extends AppCompatActivity {
                     Log.d(TAG, e.getMessage());
                     e.printStackTrace();
                     saveTestResult(e.getMessage());
-//                    sendResultToServer(getCurrentCredentials().getTitle(), -1, e);
+                    exception = e;
                     publishProgress(Consts.TASK_FAIL_ACTION);
                 }
             }
@@ -548,6 +556,7 @@ public class CheckerActivity extends AppCompatActivity {
             if (params[0].equals(Consts.TASK_SUCCESS_ACTION)) {
                 addSendedPushToReport();
             } else {
+                setDesiredPushId(0);
                 setColorStatusOval(Consts.STATUS_COLOR_FAIL);
                 sendResultToServer(getCurrentCredentials().getTitle(), -1, exception);
                 exception = null;
@@ -648,13 +657,23 @@ public class CheckerActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-//                finish();
-//                return true;
             case R.id.select_servers:
                 createDialog().show();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void initActionBar() {
+        ActionBar mActionBar = getSupportActionBar();
+        mActionBar.setDisplayShowHomeEnabled(false);
+        mActionBar.setDisplayShowTitleEnabled(false);
+
+        LayoutInflater mInflater = LayoutInflater.from(this);
+        View mCustomView = mInflater.inflate(R.layout.actionbar_view, null);
+
+        mActionBar.setCustomView(mCustomView);
+        mActionBar.setDisplayShowCustomEnabled(true);
     }
 }
