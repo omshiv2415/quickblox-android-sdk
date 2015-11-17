@@ -45,6 +45,8 @@ import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
 import com.quickblox.videochat.webrtc.view.QBRTCVideoTrack;
 
+import org.webrtc.StatsObserver;
+import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 
 import java.io.Serializable;
@@ -564,14 +566,14 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     }
 
     @Override
-    public void onConnectedToUser(QBRTCSession qbrtcSession, Integer integer) {
+    public void onConnectedToUser(QBRTCSession qbrtcSession,final Integer userId) {
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 actionButtonsEnabled(true);
             }
         });
-        setStatusForOpponent(integer, getString(R.string.connected));
+        setStatusForOpponent(userId, getString(R.string.connected));
     }
 
 

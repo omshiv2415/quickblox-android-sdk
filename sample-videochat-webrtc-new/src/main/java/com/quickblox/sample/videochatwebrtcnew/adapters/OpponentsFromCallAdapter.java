@@ -110,6 +110,7 @@ public class OpponentsFromCallAdapter extends RecyclerView.Adapter<OpponentsFrom
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView peerStatsView;
         TextView opponentsName;
         TextView connectionStatus;
         RTCGlVIew opponentView;
@@ -126,6 +127,7 @@ public class OpponentsFromCallAdapter extends RecyclerView.Adapter<OpponentsFrom
             connectionStatus.setText(status);
         }
 
+
         public void setUserId(int userId) {
             this.userId = userId;
         }
@@ -139,7 +141,6 @@ public class OpponentsFromCallAdapter extends RecyclerView.Adapter<OpponentsFrom
         }
 
         public void showOpponentView(boolean show) {
-            // Create video renderers.
             opponentView.setVisibility(show ? View.VISIBLE : View.GONE);
         }
 

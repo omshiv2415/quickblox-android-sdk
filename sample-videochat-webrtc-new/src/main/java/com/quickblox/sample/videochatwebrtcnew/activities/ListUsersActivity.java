@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -24,6 +26,7 @@ import com.quickblox.sample.videochatwebrtcnew.R;
 import com.quickblox.sample.videochatwebrtcnew.User;
 import com.quickblox.sample.videochatwebrtcnew.adapters.UsersAdapter;
 import com.quickblox.sample.videochatwebrtcnew.definitions.Consts;
+import com.quickblox.sample.videochatwebrtcnew.fragments.dialogs.ChooserDialog;
 import com.quickblox.sample.videochatwebrtcnew.holder.DataHolder;
 import com.quickblox.users.QBUsers;
 import com.quickblox.users.model.QBUser;
@@ -97,6 +100,41 @@ public class ListUsersActivity extends Activity {
                 showProgress(false);
             }
         });
+    }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.loadTest:
+                if (!resultReceived || (SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY){
+                    return true;
+                }
+                showChooserDialog();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void showChooserDialog(){
+        String[] items = getResources().getStringArray(R.array.userTitles);
+        String[] values = getResources().getStringArray(R.array.userTags);
+        ChooserDialog chooserDialog = ChooserDialog.newInstance(getString(R.string.action_load_users), items, values);
+        chooserDialog.setOnItemChooserDialogListener(new ChooserDialog.OnItemChooserDialogListener() {
+            @Override
+            public void onItemSelected(String item) {
+                loadUsers(item);
+            }
+        });
+        chooserDialog.show(getFragmentManager(), "chooser");
     }
 
     private void initUI() {
@@ -205,11 +243,15 @@ public class ListUsersActivity extends Activity {
     }
 
     private void loadUsers(){
+        loadUsers(getString(R.string.test_tag));
+    }
+
+    private void loadUsers(String tag){
         showProgress(true);
         QBPagedRequestBuilder requestBuilder = new QBPagedRequestBuilder();
         requestBuilder.setPerPage(20);
         List<String> tags = new LinkedList<>();
-        tags.add(getString(R.string.user_tag));
+        tags.add(tag);
         QBUsers.getUsersByTags(tags, requestBuilder, new QBEntityCallback<ArrayList<QBUser>>() {
             @Override
             public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {

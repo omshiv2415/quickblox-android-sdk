@@ -106,7 +106,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         initQBRTCClient();
         initWiFiManagerListener();
-        ringtonePlayer = new RingtonePlayer(this);
+        ringtonePlayer = new RingtonePlayer(this, R.raw.beep);
     }
 
     private void initQBRTCClient() {
@@ -179,7 +179,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                     ConversationFragment conversationFragment = (ConversationFragment) getFragmentManager().findFragmentByTag(CONVERSATION_CALL_FRAGMENT);
                     if (conversationFragment != null) {
                         disableConversationFragmentButtons();
-                        ringtonePlayer.stopOutBeep();
+                        ringtonePlayer.stop();
                         hangUpCurrentSession();
                     }
                 } else {
@@ -197,7 +197,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
     public void hangUpCurrentSession() {
-        ringtonePlayer.stopOutBeep();
+        ringtonePlayer.stop();
         if (getCurrentSession() != null) {
             getCurrentSession().hangUp(new HashMap<String, String>());
         }
@@ -299,7 +299,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                    ringtonePlayer.stopOutBeep();
+                    ringtonePlayer.stop();
             }
         });
     }
@@ -325,7 +325,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ringtonePlayer.stopOutBeep();
+                ringtonePlayer.stop();
             }
         });
     }
@@ -342,7 +342,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ringtonePlayer.stopOutBeep();
+                ringtonePlayer.stop();
             }
         });
     }
@@ -473,15 +473,18 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                 sessionUserCallback.onReceiveHangUpFromUser(session, userID);
             }
 
+            User participant = DataHolder.getUserByID(userID);
+
+            final String participantName = participant != null ? participant.getFullName() : String.valueOf(userID);
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    showToast(getString(R.string.hungUp) + "received from user "+userID);
+                    showToast("User " + participantName + " " + getString(R.string.hungUp) + " conversation");
                 }
             });
         }
     }
-
 
     private Fragment getCurrentFragment(){
         return getFragmentManager().findFragmentById(R.id.fragment_container);
@@ -490,7 +493,6 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     public void addOpponentsFragment() {
         FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container,  new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
     }
-
 
     public void removeIncomeCallFragment() {
         FragmentManager fragmentManager = getFragmentManager();
@@ -532,7 +534,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                 qbConferenceType, userInfo,
                 StartConversetionReason.OUTCOME_CALL_MADE, getCurrentSession().getSessionID());
         FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, fragment, CONVERSATION_CALL_FRAGMENT);
-        ringtonePlayer.startOutBeep();
+        ringtonePlayer.play(true);
     }
 
 

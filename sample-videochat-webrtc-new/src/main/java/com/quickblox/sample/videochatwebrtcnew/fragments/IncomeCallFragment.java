@@ -22,6 +22,7 @@ import com.quickblox.sample.videochatwebrtcnew.User;
 import com.quickblox.sample.videochatwebrtcnew.activities.CallActivity;
 import com.quickblox.sample.videochatwebrtcnew.activities.ListUsersActivity;
 import com.quickblox.sample.videochatwebrtcnew.holder.DataHolder;
+import com.quickblox.sample.videochatwebrtcnew.util.RingtonePlayer;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCSessionDescription;
@@ -51,13 +52,12 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
     private ArrayList<Integer> opponents;
     private List<User> opponentsFromCall = new ArrayList<>();
     private QBRTCSessionDescription sessionDescription;
-    private MediaPlayer ringtone;
     private Vibrator vibrator;
     private QBRTCTypes.QBConferenceType conferenceType;
     private int qbConferenceType;
     private View view;
     private long lastCliclTime = 0l;
-
+    private RingtonePlayer ringtonePlayer;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -86,7 +86,7 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
             initButtonsListener();
 
         }
-
+        ringtonePlayer = new RingtonePlayer(getActivity());
         return view;
     }
 
@@ -134,11 +134,7 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
 
     public void startCallNotification() {
 
-        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-        ringtone = MediaPlayer.create(getActivity(), notification);
-
-//        ringtone.setLooping(true);
-        ringtone.start();
+        ringtonePlayer.play(false);
 
         vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -150,16 +146,8 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
     }
 
     private void stopCallNotification() {
-        if (ringtone != null) {
-            try {
-                ringtone.stop();
-            } catch (IllegalStateException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            ringtone.release();
-            ringtone = null;
+        if (ringtonePlayer != null) {
+            ringtonePlayer.stop();
         }
 
         if (vibrator != null) {

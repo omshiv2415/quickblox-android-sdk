@@ -75,6 +75,7 @@
             android:textColor="@color/white"
             android:textStyle="normal|italic" />
 
+
         <TextView
             android:id="@+id/opponentName"
             android:layout_width="match_parent"

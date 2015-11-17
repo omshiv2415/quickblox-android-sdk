@@ -16,8 +16,14 @@
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
 
+    <string name="action_load_test_users">Load test users</string>
+    <string name="action_load_users">Load users</string>
 
-    <string name="user_tag">qbqa</string>
+    <string name="test_users">test_environment</string>
+    <string name="pro_ag">production_environment</string>
+
+    <string name="test_tag">qbqa</string>
+    <string name="prod_tag">webrtc</string>
 
     <string name="welcoming_message">Login as any user on this deviсe and another(s) users on another device</string>
     <string name="select_user_to_call">Select Users You Want to Call</string>

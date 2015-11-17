@@ -50,6 +50,16 @@
         <item>opus</item>
     </string-array>
 
+    <string-array name="userTitles">
+        <item>Test users</item>
+        <item>Production users</item>
+    </string-array>
+
+    <string-array name="userTags">
+        <item>qbqa</item>
+        <item>webrtc</item>
+    </string-array>
+
     <integer-array name="localViewCoordinates">
         <item>0</item>
         <item>0</item>
