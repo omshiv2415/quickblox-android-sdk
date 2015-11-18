@@ -1,7 +1,6 @@
 package com.quickblox.sample.gcmchecker.main.activities;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -26,15 +25,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.data.DataHolder;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.core.QBEntityCallbackImpl;
@@ -46,6 +42,7 @@ import com.quickblox.messages.QBMessages;
 import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBEvent;
 import com.quickblox.messages.model.QBNotificationType;
+import com.quickblox.messages.model.QBPushType;
 import com.quickblox.sample.gcmchecker.QuerySendReport;
 import com.quickblox.sample.gcmchecker.R;
 import com.quickblox.sample.gcmchecker.main.Consts;
@@ -56,8 +53,6 @@ import com.quickblox.sample.gcmchecker.main.models.Report;
 import com.quickblox.sample.gcmchecker.main.models.ResultTests;
 import com.quickblox.sample.gcmchecker.main.utils.DialogUtils;
 import com.quickblox.users.model.QBUser;
-
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -76,7 +71,6 @@ public class CheckerActivity extends AppCompatActivity {
     private Button startCheckerBtn;
     private ListView serversListView;
     private ReportAdapter reportAdapter;
-    private ProgressBar checkerPB;
     private GoogleCloudMessaging googleCloudMessaging;
     private String regId;
     private Credentials currentCredentials;
@@ -116,7 +110,6 @@ public class CheckerActivity extends AppCompatActivity {
     }
 
     private void prepareData(){
-//        credentialsList = CredentialsDBManager.getAllCredetntials(this);
         reportList = new ArrayList<>();
         for (Credentials credentials : credentialsList){
             Report report = new Report();
@@ -149,9 +142,6 @@ public class CheckerActivity extends AppCompatActivity {
                 }
             }
         });
-//        startCheckerBtn = (Button) findViewById(R.id.startCheckerBtn);
-//        checkerPB = (ProgressBar) findViewById(R.id.startCheckerPB);
-//        checkerPB.setVisibility(View.INVISIBLE);
     }
 
     public Credentials getCurrentCredentials() {
@@ -185,12 +175,6 @@ public class CheckerActivity extends AppCompatActivity {
             indexCurrentServer++;
         }
 
-//        if (checkerPB.getVisibility()!= View.VISIBLE){
-//            checkerPB.setVisibility(View.VISIBLE);
-//        }
-
-//        startCheckerBtn.setClickable(false);
-//        startCheckerBtn.setEnabled(false);
         setColorCurrentItem(Consts.TEST_ITEM_BACKGROUND_COLOR);
         setDesiredPushId(0);
         Credentials credentials = credentialsList.get(indexCurrentServer);
@@ -237,23 +221,23 @@ public class CheckerActivity extends AppCompatActivity {
         QBEvent qbEvent = new QBEvent();
         qbEvent.setNotificationType(QBNotificationType.PUSH);
         qbEvent.setEnvironment(QBEnvironment.DEVELOPMENT);
+        qbEvent.setPushType(QBPushType.GCM);
 
         int pushId = new Random(System.currentTimeMillis()).nextInt(999999 - 100000) + 100000;
         setDesiredPushId(pushId);
         long currentTimeMillis = System.currentTimeMillis();
 
-        JSONObject json = new JSONObject();
+        HashMap<String, String> pushParams = new HashMap<>();
         try {
-            json.put(Consts.EXTRA_MESSAGE, "");
-            json.put(Consts.EXTRA_PUSH_ID, pushId);
-            json.put(Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
-            json.put(Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
+            pushParams.put(Consts.GCM_PREFIX + Consts.EXTRA_PUSH_ID, String.valueOf(pushId));
+            pushParams.put(Consts.GCM_PREFIX + Consts.EXTRA_SEND_DATE, String.valueOf(currentTimeMillis));
+            pushParams.put(Consts.GCM_PREFIX + Consts.EXTRA_SERVER_TITLE, getCurrentCredentials().getTitle());
         } catch (Exception e) {
             e.printStackTrace();
             saveTestResult(e.getMessage());
         }
 
-        qbEvent.setMessage(json.toString());
+        qbEvent.setMessage(pushParams);
 
         StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
         userIds.add(Integer.parseInt(getCurrentCredentials().getUserID()));
@@ -266,6 +250,11 @@ public class CheckerActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "new broadcast message ");
+
+            for(String s : intent.getExtras().keySet()){
+                    Log.i(TAG, "push key - " + s + ": " + intent.getExtras().get(s));
+            }
+
             String sendDate = intent.getExtras().getString(Consts.EXTRA_SEND_DATE);
             String deliveryDate = intent.getExtras().getString(Consts.EXTRA_DELIVERY_DATE);
             String serverTitle = intent.getExtras().getString(Consts.EXTRA_SERVER_TITLE);

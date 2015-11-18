@@ -27,6 +27,7 @@ public class Consts {
     public static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
     public static final String EMPTY_STRING = "";
+    public static final String GCM_PREFIX = "data.";
 
     public static final String EXTRA_MESSAGE = "message";
     public static final String EXTRA_PUSH_ID = "id";
