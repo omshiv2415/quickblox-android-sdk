@@ -410,7 +410,7 @@ public class ScreenCapturer implements Screen.ScreenObserver {
          void OnFrameCaptured(Bitmap bmp,
                                       int rotation, long timeStamp);
 
-         void OnFrameCaptured(int[] data, int width, int height,
+         void OnFrameCaptured(byte[] data, int width, int height,
                              int rotation, long timeStamp);
 
          void OnOutputFormatRequest(int width, int height, int fps);
@@ -418,7 +418,7 @@ public class ScreenCapturer implements Screen.ScreenObserver {
 
     // An implementation of CapturerObserver that forwards all calls from
     // Java to the C layer.
-   /* static class NativeObserver implements CapturerSimpleObserver {
+    static class NativeObserver implements CapturerSimpleObserver {
         private final long nativeCapturer;
 
         public NativeObserver(long nativeCapturer) {
@@ -436,8 +436,8 @@ public class ScreenCapturer implements Screen.ScreenObserver {
         }
 
         @Override
-        public void OnFrameCaptured(int[] data, int rotation, long timeStamp) {
-            nativeOnFrameCaptured(nativeCapturer, data, rotation, timeStamp);
+        public void OnFrameCaptured(byte[] data, int width, int height, int rotation, long timeStamp) {
+            nativeOnFrameCaptured(nativeCapturer, data, width, height, rotation, timeStamp);
         }
 
         @Override
@@ -448,8 +448,9 @@ public class ScreenCapturer implements Screen.ScreenObserver {
         private native void nativeCapturerStarted(long nativeCapturer,
                                                   boolean success);
         private native void nativeOnFrameCaptured(long nativeCapturer,
-                                                  byte[] data, int rotation, long timeStamp);
+                                                  byte[] data, int width, int height,
+                                                  int rotation, long timeStamp);
         private native void nativeOnOutputFormatRequest(long nativeCapturer,
                                                         int width, int height, int fps);
-    }*/
+    }
 }

@@ -73,7 +73,7 @@ public class ScreenCaptiringFragment extends Fragment implements View.OnClickLis
     }
 
     @Override
-    public void OnFrameCaptured(int[] data, int width, int height, int rotation, long timeStamp) {
+    public void OnFrameCaptured(byte[] data, int width, int height, int rotation, long timeStamp) {
 
     }
 
