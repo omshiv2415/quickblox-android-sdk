@@ -12,6 +12,19 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
 
 
+/**
+ * View Class displays webrtc video frames {@link org.webrtc.VideoRenderer.I420Frame I420Frame}
+ * using {@link org.webrtc.VideoRendererGui VideoRendererGui}. Note this view
+ * allows to display only 2 video frames on 1 view - for example remote video and
+ * local. If you want to display more than 2 frames on one view
+ * use {@link org.webrtc.VideoRendererGui VideoRendererGui}
+ * to define your own behaviour.
+ * Use xml attributes "mainCoords" and "secondCoords" to define start point,
+ * width and height in percent of entire view to be held by particular frame in format
+ * [x, y, width, height] as array resource.
+ * Use xml attributes "mainMirror" and "secondMirror" to reflect frame by Y axis.
+ *
+ */
 public class RTCGlVIew extends GLSurfaceView{
 
 
@@ -22,7 +35,6 @@ public class RTCGlVIew extends GLSurfaceView{
 
     private final int[] remoteCoords = {0, 0, 100, 100};
     private final int[] localCoords = {0, 0, 100, 100};
-    private ViewType viewType = ViewType.BOTH;
     private boolean mainMirror;
     private boolean secondMirror;
 
@@ -40,10 +52,6 @@ public class RTCGlVIew extends GLSurfaceView{
                 R.styleable.RTCGlView,
                 0, 0);
         init(a);
-    }
-
-    public void setViewType(ViewType viewType) {
-        this.viewType = viewType;
     }
 
     public VideoRenderer.Callbacks obtainVideoRenderer(RendererSurface rendererSurface){
@@ -70,7 +78,6 @@ public class RTCGlVIew extends GLSurfaceView{
     }
 
     public void updateRenderer(RendererSurface rendererSurface, RendererConfig config){
-        Log.i(TAG, "updateRenderer viewType=" + viewType);
         boolean mainRenderer = RendererSurface.MAIN.equals(rendererSurface);
         VideoRenderer.Callbacks callbacks = mainRenderer ? mainRendererCallback
                 :localRendererCallback;
@@ -126,24 +133,12 @@ public class RTCGlVIew extends GLSurfaceView{
     private void setValuefromResources(TypedArray typedArray){
 
         Log.i(TAG, "setValuefromResources");
-        int viewType = typedArray.getInt(R.styleable.RTCGlView_viewType, -1);
-        if (viewType >= 0){
-            Log.i(TAG, "view type="+viewType);
-            for (ViewType type :ViewType.values()){
-                if (type.ordinal() == viewType){
-                    Log.i(TAG, "view enum="+type.toString());
-                    setViewType(type);
-                    break;
-                }
-            }
-        }
-
         setRendererMirror(typedArray.getBoolean(R.styleable.RTCGlView_mainMirror, false),
                 RendererSurface.MAIN);
         setRendererMirror(typedArray.getBoolean(R.styleable.RTCGlView_secondMirror, false),
                 RendererSurface.SECOND);
 
-        final int remoteValuesId = typedArray.getResourceId(R.styleable.RTCGlView_firstCoords, 0);
+        final int remoteValuesId = typedArray.getResourceId(R.styleable.RTCGlView_mainCoords, 0);
 
         if (remoteValuesId != 0) {
             int[] values = getResources().getIntArray(remoteValuesId);
@@ -170,10 +165,6 @@ public class RTCGlVIew extends GLSurfaceView{
 
     public enum RendererSurface {
         MAIN, SECOND
-    }
-
-    public enum ViewType {
-        LOCAL, REMOTE, BOTH;
     }
 
 }

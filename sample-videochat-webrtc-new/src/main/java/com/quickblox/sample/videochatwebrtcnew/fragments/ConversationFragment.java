@@ -24,6 +24,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.quickblox.sample.videochatwebrtcnew.ApplicationSingleton;
@@ -38,11 +39,14 @@ import com.quickblox.sample.videochatwebrtcnew.view.RTCGlVIew;
 import com.quickblox.sample.videochatwebrtcnew.view.RTCGlVIew.RendererConfig;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBMediaStreamManager;
-import com.quickblox.videochat.webrtc.QBRTCException;
+import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
+import com.quickblox.videochat.webrtc.QBSignalingSpec;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
+import com.quickblox.videochat.webrtc.exception.QBRTCSignalException;
 import com.quickblox.videochat.webrtc.view.QBRTCVideoTrack;
 
 import org.webrtc.StatsObserver;
@@ -58,7 +62,7 @@ import java.util.Map;
 /**
  * Created by tereha on 16.02.15.
  */
-public class ConversationFragment extends Fragment implements Serializable, QBRTCClientVideoTracksCallbacks, QBRTCSessionConnectionCallbacks, CallActivity.QBRTCSessionUserCallback, OpponentsFromCallAdapter.OnAdapterEventListener {
+public class ConversationFragment extends Fragment implements Serializable, QBRTCClientVideoTracksCallbacks, QBRTCSessionConnectionCallbacks, CallActivity.QBRTCSessionUserCallback, OpponentsFromCallAdapter.OnAdapterEventListener, QBRTCSignalingCallback {
 
     public static final String CALLER_NAME = "caller_name";
     public static final String SESSION_ID = "sessionID";
@@ -190,6 +194,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
 
         super.onStart();
         QBRTCSession session = ((CallActivity) getActivity()).getCurrentSession();
+        session.addSignalingCallback(this);
         if (!isMessageProcessed) {
             if (startReason == CallActivity.StartConversetionReason.INCOME_CALL_FOR_ACCEPTION.ordinal()) {
                 session.acceptCall(session.getUserInfo());
@@ -327,6 +332,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         getActivity().unregisterReceiver(audioStreamReceiver);
         ((CallActivity) getActivity()).removeRTCClientConnectionCallback(this);
         ((CallActivity) getActivity()).removeRTCSessionUserCallback(this);
+        ((CallActivity) getActivity()).getCurrentSession().removeSignalingCallback(this);
     }
 
     private void initSwitchCameraButton(View view) {
@@ -620,6 +626,26 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     @Override
     public void onReceiveHangUpFromUser(QBRTCSession session, Integer userId) {
         setStatusForOpponent(userId, getString(R.string.hungUp));
+    }
+
+    @Override
+    public void onSuccessSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer integer) {
+
+    }
+
+    @Override
+    public void onErrorSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer userId, QBRTCSignalException e) {
+        showToast("Error occurred while sending packet "+qbSignalCMD.toString() + " to " + userId+" !"
+                +"Check internet connection");
+    }
+
+    private void showToast(final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private class AudioStreamReceiver extends BroadcastReceiver {
