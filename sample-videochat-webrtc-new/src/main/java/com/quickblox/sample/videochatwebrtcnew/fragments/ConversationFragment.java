@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.DimenRes;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
@@ -42,15 +43,10 @@ import com.quickblox.videochat.webrtc.QBMediaStreamManager;
 import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
-import com.quickblox.videochat.webrtc.QBSignalingSpec;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
-import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
-import com.quickblox.videochat.webrtc.exception.QBRTCSignalException;
 import com.quickblox.videochat.webrtc.view.QBRTCVideoTrack;
 
-import org.webrtc.StatsObserver;
-import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 
 import java.io.Serializable;
@@ -102,6 +98,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private SparseArray<OpponentsFromCallAdapter.ViewHolder> opponentViewHolders;
     private boolean isPeerToPeerCall;
     private QBRTCVideoTrack localVideoTrack;
+    private Handler mainHandler;
 
     public static ConversationFragment newInstance(List<User> opponents, String callerName,
                                                    QBRTCTypes.QBConferenceType qbConferenceType,
@@ -152,6 +149,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         initSessionListener();
         setUpUiByCallType(qbConferenceType);
 
+        mainHandler = new FragmentLifeCycleHandler();
         return view;
 
     }
@@ -177,13 +175,13 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         dynamicToggleVideoCall.setEnabled(enability);
 
         // inactivate toggle buttons
-        cameraToggle.setActivated(enability);
-        micToggleVideoCall.setActivated(enability);
-        dynamicToggleVideoCall.setActivated(enability);
+        cameraToggle.setChecked(enability);
+        micToggleVideoCall.setChecked(enability);
+        dynamicToggleVideoCall.setChecked(enability);
 
         if (switchCameraToggle != null) {
-            switchCameraToggle.setActivated(enability);
             switchCameraToggle.setEnabled(enability);
+            switchCameraToggle.setChecked(enability);
         }
     }
 
@@ -404,24 +402,33 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
                 boolean cameraSwitched = mediaStreamManager.switchCameraInput(new Runnable() {
                     @Override
                     public void run() {
-                        toggleCameraOnUiThread(false);
-                        int currentCameraId = mediaStreamManager.getCurrentCameraId();
-                        Log.d(TAG, "Camera was switched!");
-                        RendererConfig config = new RendererConfig();
-                        config.mirror = CameraUtils.isCameraFront(currentCameraId);
-                        localVideoView.updateRenderer(isPeerToPeerCall ? RTCGlVIew.RendererSurface.SECOND :
-                                RTCGlVIew.RendererSurface.MAIN, config);
-                        (new Handler()).postDelayed(new Runnable() {
+                        mainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                toggleCameraOnUiThread(true);
+                                toggleCamerainternal(mediaStreamManager);
                             }
-                        }, TOGGLE_CAMERA_DELAY);
+                        });
                     }
                 });
             }
 
         };
+    }
+
+    private void toggleCamerainternal(QBMediaStreamManager mediaStreamManager){
+        toggleCameraOnUiThread(false);
+        int currentCameraId = mediaStreamManager.getCurrentCameraId();
+        Log.d(TAG, "Camera was switched!");
+        RendererConfig config = new RendererConfig();
+        config.mirror = CameraUtils.isCameraFront(currentCameraId);
+        localVideoView.updateRenderer(isPeerToPeerCall ? RTCGlVIew.RendererSurface.SECOND :
+                RTCGlVIew.RendererSurface.MAIN, config);
+        mainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                toggleCameraOnUiThread(true);
+            }
+        }, TOGGLE_CAMERA_DELAY);
     }
 
     private void toggleCameraOnUiThread(final boolean toggle){
@@ -434,9 +441,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     }
 
     private void runOnUiThread(Runnable runnable){
-        if (!isDetached()) {
-            getActivity().runOnUiThread(runnable);
-        }
+        mainHandler.post(runnable);
     }
 
     private void toggleCamera(boolean isNeedEnableCam) {
@@ -490,7 +495,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         } else {
             //on group call we postpone initialization of localVideoView due to set it on Gui renderer.
             // Refer to RTCGlVIew
-            (new Handler()).postDelayed(new Runnable() {
+            mainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     localVideoView = (RTCGlVIew) ((ViewStub) getView().findViewById(R.id.localViewStub)).inflate();
@@ -652,6 +657,20 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         NONE,
         DISABLED_FROM_USER,
         ENABLED_FROM_USER
+    }
+
+    class FragmentLifeCycleHandler extends Handler{
+
+        @Override
+        public void dispatchMessage(Message msg) {
+            if (isAdded() && getActivity() != null) {
+                super.dispatchMessage(msg);
+            } else {
+                Log.d(TAG, "Fragment under destroying");
+            }
+        }
+
+
     }
 
     class DividerItemDecoration extends RecyclerView.ItemDecoration {

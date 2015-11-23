@@ -57,7 +57,7 @@
 
     <string-array name="userTags">
         <item>qbqa</item>
-        <item>webrtc</item>
+        <item>webrtcusers</item>
     </string-array>
 
     <integer-array name="localViewCoordinates">
