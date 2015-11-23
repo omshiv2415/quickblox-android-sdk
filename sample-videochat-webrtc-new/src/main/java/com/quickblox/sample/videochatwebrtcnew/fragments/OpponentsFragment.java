@@ -162,11 +162,6 @@ public class OpponentsFragment extends Fragment implements View.OnClickListener,
 
     }
 
-    private void showCapturer() {
-        ((CallActivity) getActivity()).showCapturer();
-    }
-
-
     @Override
     public void onPause() {
         super.onPause();

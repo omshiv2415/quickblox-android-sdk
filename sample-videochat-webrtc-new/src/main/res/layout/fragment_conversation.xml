@@ -77,22 +77,4 @@
 
         />
 
-<LinearLayout
-    android:id="@+id/noVideoImageContainer"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:visibility="gone"
-    android:gravity="end">
-
-    <ImageView
-        android:id="@+id/imgMyCameraOff"
-        android:layout_width="115dp"
-        android:layout_height="150dp"
-        android:background="@color/button_material_dark"
-        android:gravity="center_vertical"
-        android:scaleType="centerCrop"
-        android:visibility="invisible"
-        android:src="@drawable/ic_user_camera_off"/>
-</LinearLayout>
-
 </RelativeLayout>

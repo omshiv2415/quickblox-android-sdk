@@ -14,11 +14,21 @@ import org.webrtc.VideoRendererGui;
 
 /**
  * View Class displays webrtc video frames {@link org.webrtc.VideoRenderer.I420Frame I420Frame}
- * using {@link org.webrtc.VideoRendererGui VideoRendererGui}. Note this view
+ * using {@link org.webrtc.VideoRendererGui VideoRendererGui}.
+ * <p>
+ * Note this view
  * allows to display only 2 video frames on 1 view - for example remote video and
  * local. If you want to display more than 2 frames on one view
  * use {@link org.webrtc.VideoRendererGui VideoRendererGui}
  * to define your own behaviour.
+ * </p>
+ *
+ * <p>
+ *     Note that if you put multiple RTCGlVIew view in layout you can manage state only
+ *     of the last inflated RTCGlVIew view, because VideoRendererGui works
+ *     only with one GLSurfaceView at one time.
+ * </p>
+ *
  * Use xml attributes "mainCoords" and "secondCoords" to define start point,
  * width and height in percent of entire view to be held by particular frame in format
  * [x, y, width, height] as array resource.

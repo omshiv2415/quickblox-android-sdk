@@ -36,12 +36,15 @@ import com.quickblox.sample.videochatwebrtcnew.util.SettingsUtil;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
+import com.quickblox.videochat.webrtc.QBSignalingSpec;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
 import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
+import com.quickblox.videochat.webrtc.exception.QBRTCSignalException;
 
 import org.jivesoftware.smack.SmackException;
 import org.webrtc.VideoCapturerAndroid;
@@ -54,25 +57,20 @@ import java.util.Map;
 /**
  * Created by tereha on 16.02.15.
  */
-public class CallActivity extends BaseLogginedUserActivity implements QBRTCClientSessionCallbacks, QBRTCSessionConnectionCallbacks {
+public class CallActivity extends BaseLogginedUserActivity implements QBRTCClientSessionCallbacks, QBRTCSessionConnectionCallbacks, QBRTCSignalingCallback {
 
 
     private static final String TAG = CallActivity.class.getSimpleName();
-    private static final String ADD_OPPONENTS_FRAGMENT_HANDLER = "opponentHandlerTask";
-    private static final long TIME_BEGORE_CLOSE_CONVERSATION_FRAGMENT = 3;
-    private static final String INCOME_WINDOW_SHOW_TASK_THREAD = "INCOME_WINDOW_SHOW";
 
     public static final String OPPONENTS_CALL_FRAGMENT = "opponents_call_fragment";
     public static final String INCOME_CALL_FRAGMENT = "income_call_fragment";
     public static final String CONVERSATION_CALL_FRAGMENT = "conversation_call_fragment";
-    public static final String CAPTURERL_FRAGMENT = "capturer_fragment";
     public static final String CALLER_NAME = "caller_name";
     public static final String SESSION_ID = "sessionID";
     public static final String START_CONVERSATION_REASON = "start_conversation_reason";
 
 
     private QBRTCSession currentSession;
-    public  static String login;
     public  List<User> opponentsList;
     private Runnable showIncomingCallWindowTask;
     private Handler showIncomingCallWindowTaskHandler;
@@ -94,9 +92,6 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         opponentsList= DataHolder.getUsers();
 
         Log.d(TAG, "Activity. Thread id: " + Thread.currentThread().getId());
-
-        // Probably initialize members with default values for a new instance
-        login = getIntent().getStringExtra("login");
 
         if (savedInstanceState == null) {
             addOpponentsFragment();
@@ -167,7 +162,6 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
             fragment.actionButtonsEnabled(false);
         }
     }
-
 
     private void initIncommingCallTask() {
         showIncomingCallWindowTaskHandler = new Handler(Looper.myLooper());
@@ -255,8 +249,16 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
 
-    public void setCurrentSession(QBRTCSession sesion) {
+    public void initCurrentSession(QBRTCSession sesion) {
         this.currentSession = sesion;
+        this.currentSession.addSessionCallbacksListener(CallActivity.this);
+        this.currentSession.addSignalingCallback(CallActivity.this);
+    }
+
+    public void releaseCurrentSession() {
+        this.currentSession.removeSessionnCallbacksListener(CallActivity.this);
+        this.currentSession.removeSignalingCallback(CallActivity.this);
+        this.currentSession = null;
     }
 
     // ---------------Chat callback methods implementation  ----------------------//
@@ -272,8 +274,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
 
                 if (getCurrentSession() == null) {
                     Log.d(TAG, "Start new session");
-                    setCurrentSession(session);
-                    session.addSessionCallbacksListener(CallActivity.this);
+                    initCurrentSession(session);
                     addIncomeCallFragment(session);
 
                     isInCommingCall = true;
@@ -299,7 +300,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                    ringtonePlayer.stop();
+                ringtonePlayer.stop();
             }
         });
     }
@@ -419,7 +420,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                         addOpponentsFragment();
                     }
 
-                    currentSession = null;
+                    releaseCurrentSession();
 
                     stopTimer();
                     closeByWifiStateAllow = true;
@@ -528,8 +529,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                 getDefaultSharedPrefs(),
                 this);
         Log.d("Crash", "addConversationFragmentStartCall. Set session " + newSessionWithOpponents);
-        setCurrentSession(newSessionWithOpponents);
-        getCurrentSession().addSessionCallbacksListener(this);
+        initCurrentSession(newSessionWithOpponents);
         ConversationFragment fragment = ConversationFragment.newInstance(opponents, opponents.get(0).getFullName(),
                 qbConferenceType, userInfo,
                 StartConversetionReason.OUTCOME_CALL_MADE, getCurrentSession().getSessionID());
@@ -611,9 +611,14 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         return sharedPref;
     }
 
-    public void showCapturer() {
-        /*ScreenCaptiringFragment captiringFragment = new ScreenCaptiringFragment();
-        FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, captiringFragment, CAPTURERL_FRAGMENT);*/
+    @Override
+    public void onSuccessSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer integer) {
+    }
+
+    @Override
+    public void onErrorSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer userId, QBRTCSignalException e) {
+        showToast("Error is occurred while sending \'"+qbSignalCMD.toString() + "\' message to " + userId+" !"
+                +" Check internet connection!");
     }
 
     public static enum StartConversetionReason {

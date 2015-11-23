@@ -11,11 +11,7 @@ import android.widget.TextView;
 
 import com.quickblox.sample.videochatwebrtcnew.R;
 import com.quickblox.sample.videochatwebrtcnew.User;
-import com.quickblox.sample.videochatwebrtcnew.fragments.ConversationFragment;
 import com.quickblox.sample.videochatwebrtcnew.view.RTCGlVIew;
-import com.quickblox.videochat.webrtc.view.QBGLVideoView;
-
-import org.webrtc.VideoRendererGui;
 
 import java.util.List;
 
@@ -96,7 +92,7 @@ public class OpponentsFromCallAdapter extends RecyclerView.Adapter<OpponentsFrom
         holder.opponentsName.setText(user.getFullName());
         holder.setUserId(user.getId());
         if (position == (opponents.size() -1 )) {
-            adapterListener.OnBindViewHolder(holder, position);
+            adapterListener.OnBindLastViewHolder(holder, position);
         }
     }
 
@@ -106,11 +102,10 @@ public class OpponentsFromCallAdapter extends RecyclerView.Adapter<OpponentsFrom
     }
 
     public interface OnAdapterEventListener {
-        public void OnBindViewHolder(ViewHolder holder, int position);
+        public void OnBindLastViewHolder(ViewHolder holder, int position);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView peerStatsView;
         TextView opponentsName;
         TextView connectionStatus;
         RTCGlVIew opponentView;
