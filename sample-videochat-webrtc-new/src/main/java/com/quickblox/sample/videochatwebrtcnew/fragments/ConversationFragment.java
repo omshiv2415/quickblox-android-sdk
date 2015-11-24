@@ -25,7 +25,6 @@ import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.quickblox.sample.videochatwebrtcnew.ApplicationSingleton;
@@ -36,8 +35,8 @@ import com.quickblox.sample.videochatwebrtcnew.activities.ListUsersActivity;
 import com.quickblox.sample.videochatwebrtcnew.adapters.OpponentsFromCallAdapter;
 import com.quickblox.sample.videochatwebrtcnew.holder.DataHolder;
 import com.quickblox.sample.videochatwebrtcnew.util.CameraUtils;
-import com.quickblox.sample.videochatwebrtcnew.view.RTCGlVIew;
-import com.quickblox.sample.videochatwebrtcnew.view.RTCGlVIew.RendererConfig;
+import com.quickblox.sample.videochatwebrtcnew.view.RTCGLVideoView;
+import com.quickblox.sample.videochatwebrtcnew.view.RTCGLVideoView.RendererConfig;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBMediaStreamManager;
 import com.quickblox.videochat.webrtc.exception.QBRTCException;
@@ -90,7 +89,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private LinearLayout actionVideoButtonsLayout;
     private String callerName;
     private boolean isMessageProcessed;
-    private RTCGlVIew localVideoView;
+    private RTCGLVideoView localVideoView;
     private IntentFilter intentFilter;
     private AudioStreamReceiver audioStreamReceiver;
     private CameraState cameraState = CameraState.NONE;
@@ -421,8 +420,8 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         Log.d(TAG, "Camera was switched!");
         RendererConfig config = new RendererConfig();
         config.mirror = CameraUtils.isCameraFront(currentCameraId);
-        localVideoView.updateRenderer(isPeerToPeerCall ? RTCGlVIew.RendererSurface.SECOND :
-                RTCGlVIew.RendererSurface.MAIN, config);
+        localVideoView.updateRenderer(isPeerToPeerCall ? RTCGLVideoView.RendererSurface.SECOND :
+                RTCGLVideoView.RendererSurface.MAIN, config);
         mainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -476,7 +475,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         if (itemHolder == null) {
             return;
         }
-        RTCGlVIew remoteVideoView = itemHolder.getOpponentView();
+        RTCGLVideoView remoteVideoView = itemHolder.getOpponentView();
         if (remoteVideoView != null) {
             fillVideoView(remoteVideoView, videoTrack);
         }
@@ -498,7 +497,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
             mainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    localVideoView = (RTCGlVIew) ((ViewStub) getView().findViewById(R.id.localViewStub)).inflate();
+                    localVideoView = (RTCGLVideoView) ((ViewStub) getView().findViewById(R.id.localViewStub)).inflate();
                     if (localVideoTrack != null) {
                         fillVideoView(localVideoView, localVideoTrack, !isPeerToPeerCall);
                     }
@@ -536,14 +535,14 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         return null;
     }
 
-    private void fillVideoView(RTCGlVIew videoView, QBRTCVideoTrack videoTrack, boolean remoteRenderer) {
+    private void fillVideoView(RTCGLVideoView videoView, QBRTCVideoTrack videoTrack, boolean remoteRenderer) {
         videoTrack.addRenderer(new VideoRenderer(remoteRenderer ?
-                videoView.obtainVideoRenderer(RTCGlVIew.RendererSurface.MAIN) :
-                videoView.obtainVideoRenderer(RTCGlVIew.RendererSurface.SECOND)));
+                videoView.obtainVideoRenderer(RTCGLVideoView.RendererSurface.MAIN) :
+                videoView.obtainVideoRenderer(RTCGLVideoView.RendererSurface.SECOND)));
         Log.d(TAG, (remoteRenderer ? "remote" : "local") + " Track is rendering");
     }
 
-    private void fillVideoView(RTCGlVIew videoView, QBRTCVideoTrack videoTrack) {
+    private void fillVideoView(RTCGLVideoView videoView, QBRTCVideoTrack videoTrack) {
         fillVideoView(videoView, videoTrack, true);
     }
 
