@@ -249,7 +249,7 @@ public class ListUsersActivity extends Activity {
     private void loadUsers(String tag){
         showProgress(true);
         QBPagedRequestBuilder requestBuilder = new QBPagedRequestBuilder();
-        requestBuilder.setPerPage(20);
+        requestBuilder.setPerPage(getResources().getInteger(R.integer.users_count));
         List<String> tags = new LinkedList<>();
         tags.add(tag);
         QBUsers.getUsersByTags(tags, requestBuilder, new QBEntityCallback<ArrayList<QBUser>>() {

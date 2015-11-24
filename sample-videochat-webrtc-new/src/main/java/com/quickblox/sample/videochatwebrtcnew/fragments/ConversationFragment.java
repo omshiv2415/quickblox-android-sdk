@@ -175,13 +175,13 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         dynamicToggleVideoCall.setEnabled(enability);
 
         // inactivate toggle buttons
-        cameraToggle.setChecked(enability);
-        micToggleVideoCall.setChecked(enability);
-        dynamicToggleVideoCall.setChecked(enability);
+        cameraToggle.setActivated(enability);
+        micToggleVideoCall.setActivated(enability);
+        dynamicToggleVideoCall.setActivated(enability);
 
         if (switchCameraToggle != null) {
             switchCameraToggle.setEnabled(enability);
-            switchCameraToggle.setChecked(enability);
+            switchCameraToggle.setActivated(enability);
         }
     }
 
@@ -622,15 +622,6 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         setStatusForOpponent(userId, getString(R.string.hungUp));
     }
 
-    private void showToast(final String message) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getActivity(), message, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
     private class AudioStreamReceiver extends BroadcastReceiver {
 
         @Override
@@ -642,14 +633,8 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
                 Log.d(TAG, "ACTION_SCO_AUDIO_STATE_UPDATED " + intent.getIntExtra("EXTRA_SCO_AUDIO_STATE", -2));
             }
 
-            if (intent.getIntExtra("state", -1) == 0 /*|| intent.getIntExtra("EXTRA_SCO_AUDIO_STATE", -1) == 0*/) {
-                dynamicToggleVideoCall.setChecked(false);
-            } else if (intent.getIntExtra("state", -1) == 1) {
-                dynamicToggleVideoCall.setChecked(true);
-            } else {
-//                Toast.makeText(context, "Output audio stream is incorrect", Toast.LENGTH_LONG).show();
-            }
-            dynamicToggleVideoCall.invalidate();
+            dynamicToggleVideoCall.setChecked(intent.getIntExtra("state", -1) == 1);
+
         }
     }
 

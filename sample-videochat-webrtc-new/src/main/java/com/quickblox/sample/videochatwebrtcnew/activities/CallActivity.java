@@ -30,6 +30,7 @@ import com.quickblox.sample.videochatwebrtcnew.fragments.ConversationFragment;
 import com.quickblox.sample.videochatwebrtcnew.fragments.IncomeCallFragment;
 import com.quickblox.sample.videochatwebrtcnew.fragments.OpponentsFragment;
 import com.quickblox.sample.videochatwebrtcnew.holder.DataHolder;
+import com.quickblox.sample.videochatwebrtcnew.util.DialogUtil;
 import com.quickblox.sample.videochatwebrtcnew.util.FragmentExecuotr;
 import com.quickblox.sample.videochatwebrtcnew.util.RingtonePlayer;
 import com.quickblox.sample.videochatwebrtcnew.util.SettingsUtil;
@@ -452,7 +453,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(CallActivity.this, getString(message), Toast.LENGTH_LONG).show();
+                DialogUtil.showToast(CallActivity.this, message);
             }
         });
     }
@@ -461,7 +462,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(CallActivity.this, message, Toast.LENGTH_LONG).show();
+                DialogUtil.showToast(CallActivity.this, message);
             }
         });
     }
@@ -617,8 +618,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
 
     @Override
     public void onErrorSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer userId, QBRTCSignalException e) {
-        showToast("Error is occurred while sending \'"+qbSignalCMD.toString() + "\' message to " + userId+" !"
-                +" Check internet connection!");
+        showToast(R.string.dlg_signal_error);
     }
 
     public static enum StartConversetionReason {
