@@ -20,9 +20,9 @@ import com.quickblox.chat.QBChatService;
 import com.quickblox.chat.QBSignaling;
 import com.quickblox.chat.QBWebRTCSignaling;
 import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
-import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.adapters.OpponentsAdapter;
+import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 import com.quickblox.sample.groupchatwebrtc.fragments.ConversationFragment;
 import com.quickblox.sample.groupchatwebrtc.fragments.IncomeCallFragment;
 import com.quickblox.sample.groupchatwebrtc.fragments.OpponentsFragment;
@@ -34,19 +34,20 @@ import com.quickblox.sample.groupchatwebrtc.util.SettingsUtil;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
-import com.quickblox.videochat.webrtc.QBSignalingSpec;
-import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
-import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
+import com.quickblox.videochat.webrtc.QBSignalingSpec;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
+import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.exception.QBRTCSignalException;
 
 import org.jivesoftware.smack.SmackException;
 import org.webrtc.VideoCapturerAndroid;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +82,20 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     private boolean wifiEnabled = true;
     private SharedPreferences sharedPref;
     private RingtonePlayer ringtonePlayer;
+
+    public static void start(Context context, QBRTCTypes.QBConferenceType qbConferenceType,
+                             List<Integer> opponentsIds, Map<String, String> userInfo,
+                             Consts.CALL_DIRECTION_TYPE callDirectionType){
+        Intent intent = new Intent(context, CallActivity.class);
+        intent.putExtra(Consts.CALL_DIRECTION_TYPE_EXTRAS, callDirectionType);
+        intent.putExtra(Consts.CALL_TYPE_EXTRAS, qbConferenceType);
+        intent.putExtra(Consts.USER_INFO_EXTRAS, (Serializable) userInfo);
+        intent.putExtra(Consts.OPPONENTS_LIST_EXTRAS, (Serializable) opponentsIds);
+        if (callDirectionType == Consts.CALL_DIRECTION_TYPE.INCOMING) {
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        context.startActivity(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
