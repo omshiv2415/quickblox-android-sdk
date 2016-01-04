@@ -77,7 +77,7 @@ public class Consts {
     public static final String USER_ID = "user_id";
 
     public static final String USER_IS_LOGINED = "is_logined";
-    public static final long ANSWER_TIME_INTERVAL = 45l;
+    public static final long ANSWER_TIME_INTERVAL = 30l;
     public static final long HUNG_UP_TIME_OUT = 3000l;
 
     //CALL ACTIVITY CLOSE REASONS
@@ -100,6 +100,7 @@ public class Consts {
     public static final String IS_SERVICE_AUTOSTARTED = "autostart";
     public static final String SHARED_PREFERENCES = "preferences";
     public static final String QB_EXCEPTION_EXTRAS = "exception";
+    public static final String INCOME_SESSION_ID = "income_session_id";
 
     public enum CALL_DIRECTION_TYPE {
         INCOMING,

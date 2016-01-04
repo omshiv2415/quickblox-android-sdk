@@ -36,7 +36,6 @@ import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
-import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionConnectionCallbacks;
 import com.quickblox.videochat.webrtc.exception.QBRTCException;
 
 import org.jivesoftware.smack.SmackException;
@@ -50,7 +49,7 @@ import java.util.Map;
 /**
  * Created by vadim on 12/29/15.
  */
-public class ChatConnectionService extends Service implements QBRTCClientSessionCallbacks, QBRTCSessionConnectionCallbacks{
+public class ChatConnectionService extends Service implements QBRTCClientSessionCallbacks{
     private static final String TAG = ChatConnectionService.class.getSimpleName();
     private QBChatService chatService;
     private String login;
@@ -59,10 +58,22 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
     private int startServiceVariant;
     private BroadcastReceiver wifiStateReceiver;
     private boolean needMaintainConnectivity;
+    private QBRTCClient rtcClient;
+
+    public static void start(Context context, String login, String password, int startServiceVariant,
+                             PendingIntent resultCallback){
+        Intent intent = new Intent(context, ChatConnectionService.class);
+        intent.putExtra(Consts.USER_LOGIN, login);
+        intent.putExtra(Consts.USER_PASSWORD, password);
+        intent.putExtra(Consts.START_SERVICE_VARIANT, startServiceVariant);
+        intent.putExtra(Consts.PARAM_PINTENT, resultCallback);
+        context.startService(intent);
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        QBChatService.setDebugEnabled(true);
         QBSettings.getInstance().fastConfigInit(Consts.APP_ID, Consts.AUTH_KEY, Consts.AUTH_SECRET);
         initWiFiManagerListener();
     }
@@ -126,31 +137,37 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
             e.printStackTrace();
         }
 
+        rtcClient = QBRTCClient.getInstance(this);
+
+        // Configure
+        //
+        QBRTCConfig.setMaxOpponentsCount(6);
+        QBRTCConfig.setDisconnectTime(30);
+        QBRTCConfig.setAnswerTimeInterval(Consts.ANSWER_TIME_INTERVAL);
+        QBRTCConfig.setDebugEnabled(true);
+
         // Add signalling manager
         QBChatService.getInstance().getVideoChatWebRTCSignalingManager().addSignalingManagerListener(new QBVideoChatSignalingManagerListener() {
             @Override
             public void signalingCreated(QBSignaling qbSignaling, boolean createdLocally) {
                 if (!createdLocally) {
-                    QBRTCClient.getInstance().addSignaling((QBWebRTCSignaling) qbSignaling);
+                    rtcClient.addSignaling((QBWebRTCSignaling) qbSignaling);
                 }
             }
         });
 
-        QBRTCClient.getInstance(this).setCameraErrorHendler(new VideoCapturerAndroid.CameraErrorHandler() {
+        rtcClient.setCameraErrorHendler(new VideoCapturerAndroid.CameraErrorHandler() {
             @Override
             public void onCameraError(final String s) {
                 Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
             }
         });
 
-        QBRTCConfig.setAnswerTimeInterval(Consts.ANSWER_TIME_INTERVAL);
-
         // Add activity as callback to RTCClient
-        QBRTCClient.getInstance(this).addSessionCallbacksListener(this);
-        QBRTCClient.getInstance(this).addConnectionCallbacksListener(this);
+        rtcClient.addSessionCallbacksListener(this);
 
         // Start mange QBRTCSessions according to VideoCall parser's callbacks
-        QBRTCClient.getInstance().prepareToProcessCalls(getApplicationContext());
+        rtcClient.prepareToProcessCalls();
     }
 
     private void parseIntentExtras(Intent intent) {
@@ -189,7 +206,7 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
 
                             @Override
                             public void onSuccess() {
-                                Log.d(TAG, "onSuccess login to chat");
+                                Log.d(TAG, "onSuccess login to chat with params");
                                 startActionsOnSuccessLogin(login, password);
                             }
 
@@ -248,9 +265,7 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
     private void startOpponentsActivity(){
         Log.d(TAG, "startOpponentsActivity()");
         if (startServiceVariant != Consts.AUTOSTART) {
-            Intent intent = new Intent(ChatConnectionService.this, OpponentsActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            CallActivity.startOpponents(this);
         }
     }
 
@@ -274,8 +289,7 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
         } catch (SmackException.NotConnectedException e) {
             e.printStackTrace();
         }
-        QBRTCClient.getInstance(this).removeSessionsCallbacksListener(this);
-        QBRTCClient.getInstance(this).removeConnectionCallbacksListener(this);
+        rtcClient.removeSessionsCallbacksListener(this);
         SessionManager.setCurrentSession(null);
 
         if (wifiStateReceiver != null){
@@ -392,11 +406,8 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
     public void onReceiveNewSession(QBRTCSession qbrtcSession) {
         if (SessionManager.getCurrentSession() == null){
             SessionManager.setCurrentSession(qbrtcSession);
-            CallActivity.start(this,
-                    qbrtcSession.getConferenceType(),
-                    qbrtcSession.getOpponents(),
-                    qbrtcSession.getUserInfo(),
-                    Consts.CALL_DIRECTION_TYPE.INCOMING);
+            CallActivity.startIncomingCall(this,
+                    qbrtcSession.getSessionID());
         } else if (SessionManager.getCurrentSession() != null && !qbrtcSession.equals(SessionManager.getCurrentSession())){
             qbrtcSession.rejectCall(new HashMap<String, String>());
         }
@@ -404,12 +415,12 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
 
     @Override
     public void onUserNotAnswer(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.USER_NOT_ANSWER, integer, null, null);
+
     }
 
     @Override
     public void onCallRejectByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
-        sendBroadcastMessages(Consts.CALL_REJECT_BY_USER, integer, map, null);
+
     }
 
     @Override
@@ -419,9 +430,7 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
 
     @Override
     public void onReceiveHangUpFromUser(QBRTCSession qbrtcSession, Integer integer) {
-        if (qbrtcSession.equals(SessionManager.getCurrentSession())) {
-            sendBroadcastMessages(Consts.RECEIVE_HANG_UP_FROM_USER, integer, null, null);
-        }
+
     }
 
     @Override
@@ -432,7 +441,7 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
     @Override
     public void onSessionClosed(QBRTCSession qbrtcSession) {
         if (qbrtcSession.equals(SessionManager.getCurrentSession())) {
-            sendBroadcastMessages(Consts.SESSION_CLOSED, null, null, null);
+            SessionManager.setCurrentSession(null);
         }
     }
 
@@ -441,38 +450,4 @@ public class ChatConnectionService extends Service implements QBRTCClientSession
         sendBroadcastMessages(Consts.SESSION_START_CLOSE, null, null, null);
     }
 
-    @Override
-    public void onStartConnectToUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.START_CONNECT_TO_USER, integer, null, null);
-    }
-
-    @Override
-    public void onConnectedToUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.CONNECTED_TO_USER, integer, null, null);
-    }
-
-    @Override
-    public void onConnectionClosedForUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.CONNECTION_CLOSED_FOR_USER, integer, null, null);
-    }
-
-    @Override
-    public void onDisconnectedFromUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.DISCONNECTED_FROM_USER, integer, null, null);
-    }
-
-    @Override
-    public void onDisconnectedTimeoutFromUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.DISCONNECTED_TIMEOUT_FROM_USER, integer, null, null);
-    }
-
-    @Override
-    public void onConnectionFailedWithUser(QBRTCSession qbrtcSession, Integer integer) {
-        sendBroadcastMessages(Consts.CONNECTION_FAILED_WITH_USER, integer, null, null);
-    }
-
-    @Override
-    public void onError(QBRTCSession qbrtcSession, QBRTCException e) {
-        sendBroadcastMessages(Consts.ERROR, null, null, null);
-    }
 }

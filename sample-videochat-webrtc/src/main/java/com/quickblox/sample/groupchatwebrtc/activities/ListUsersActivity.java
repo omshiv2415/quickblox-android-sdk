@@ -1,6 +1,6 @@
 package com.quickblox.sample.groupchatwebrtc.activities;
 
-import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -24,6 +24,7 @@ import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.adapters.UsersAdapter;
 import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
+import com.quickblox.sample.groupchatwebrtc.services.ChatConnectionService;
 import com.quickblox.users.QBUsers;
 import com.quickblox.users.model.QBUser;
 
@@ -37,7 +38,7 @@ import io.fabric.sdk.android.Fabric;
 /**
  * QuickBlox team
  */
-public class ListUsersActivity extends Activity {
+public class ListUsersActivity extends BaseLogginedUserActivity  {
 
     private static final String TAG = "ListUsersActivity";
 
@@ -57,21 +58,34 @@ public class ListUsersActivity extends Activity {
         super.onCreate(savedInstanceState);
         Fabric.with(this, new Crashlytics());
         setContentView(R.layout.activity_login);
-
-        initUI();
-
         QBSettings.getInstance().fastConfigInit(Consts.APP_ID, Consts.AUTH_KEY, Consts.AUTH_SECRET);
+        if (QBChatService.isInitialized() && QBChatService.getInstance().isLoggedIn()) {
+            startCallActivity();
+            finish();
+        } else {
+            Fabric.with(this, new Crashlytics());
 
-        if (getActionBar() != null) {
-            getActionBar().setTitle(getResources().getString(R.string.opponentsListActionBarTitle));
+            initUI();
+            createAppSession();
         }
 
-        QBChatService.setDebugEnabled(true);
-        if (!QBChatService.isInitialized()) {
-            QBChatService.init(this);
-            chatService = QBChatService.getInstance();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == Consts.CALL_ACTIVITY_CLOSE) {
+            if (resultCode == Consts.CALL_ACTIVITY_CLOSE_WIFI_DISABLED) {
+                Toast.makeText(this, getString(R.string.WIFI_DISABLED), Toast.LENGTH_LONG).show();
+            }
+        } else if (resultCode == Consts.LOGIN_RESULT_CODE) {
+            boolean isLoginSuccess = data.getBooleanExtra(Consts.LOGIN_RESULT, false);
+            showProgress(false);
         }
-        createAppSession();
+    }
+
+    private void startCallActivity() {
+        CallActivity.startOpponents(this);
     }
 
     private void createAppSession() {
@@ -201,11 +215,11 @@ public class ListUsersActivity extends Activity {
         usersList.setOnItemClickListener(clicklistener);
     }
 
-    private void loadUsers(){
+    private void loadUsers() {
         loadUsers(getString(R.string.users_tag));
     }
 
-    private void loadUsers(String tag){
+    private void loadUsers(String tag) {
         showProgress(true);
 
         QBPagedRequestBuilder requestBuilder = new QBPagedRequestBuilder();
@@ -232,7 +246,7 @@ public class ListUsersActivity extends Activity {
         });
     }
 
-    private void showProgress(boolean show){
+    private void showProgress(boolean show) {
         progressBar.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
     }
 
@@ -241,14 +255,17 @@ public class ListUsersActivity extends Activity {
     private QBUser currentUser;
     AdapterView.OnItemClickListener clicklistener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            if (!resultReceived || (SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY){
+            if (!resultReceived || (SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY) {
                 return;
             }
             resultReceived = false;
             upTime = SystemClock.uptimeMillis();
             currentUser = usersListAdapter.getItem(position);
 
-            createSession(currentUser.getLogin(), currentUser.getPassword());
+            Intent tempIntent = new Intent(ListUsersActivity.this, ChatConnectionService.class);
+            PendingIntent pendingIntent = createPendingResult(Consts.LOGIN_TASK_CODE, tempIntent, 0);
+            ChatConnectionService.start(ListUsersActivity.this, currentUser.getLogin(), currentUser.getPassword(),
+                    Consts.LOGIN, pendingIntent);
         }
     };
 
@@ -265,7 +282,7 @@ public class ListUsersActivity extends Activity {
                 user.setId(session.getUserId());
 
                 DataHolder.setLoggedUser(currentUser);
-                if (chatService.isLoggedIn()){
+                if (chatService.isLoggedIn()) {
                     resultReceived = true;
                     startCallActivity(login);
                 } else {
@@ -319,18 +336,5 @@ public class ListUsersActivity extends Activity {
         startActivityForResult(intent, Consts.CALL_ACTIVITY_CLOSE);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == Consts.CALL_ACTIVITY_CLOSE){
-            if (resultCode == Consts.CALL_ACTIVITY_CLOSE_WIFI_DISABLED) {
-                Toast.makeText(this, getString(R.string.WIFI_DISABLED),Toast.LENGTH_LONG).show();
-            }
-        }
-    }
 }

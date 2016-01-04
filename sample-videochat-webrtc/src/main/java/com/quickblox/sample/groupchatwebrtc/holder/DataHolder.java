@@ -137,4 +137,14 @@ public class DataHolder {
         }
         return result;
     }
+
+    public static String getUserNameByLogin(String login) {
+            for (QBUser user : usersList) {
+                if (user.getLogin().equals(login)) {
+                    return user.getFullName();
+                }
+            }
+            return null;
+
+    }
 }

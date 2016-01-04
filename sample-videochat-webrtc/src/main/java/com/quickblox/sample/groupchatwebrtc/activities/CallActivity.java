@@ -13,13 +13,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.quickblox.chat.QBChatService;
-import com.quickblox.chat.QBSignaling;
-import com.quickblox.chat.QBWebRTCSignaling;
-import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.adapters.OpponentsAdapter;
 import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
@@ -33,7 +31,6 @@ import com.quickblox.sample.groupchatwebrtc.util.RingtonePlayer;
 import com.quickblox.sample.groupchatwebrtc.util.SettingsUtil;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCClient;
-import com.quickblox.videochat.webrtc.QBRTCConfig;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
 import com.quickblox.videochat.webrtc.QBSignalingSpec;
@@ -44,7 +41,6 @@ import com.quickblox.videochat.webrtc.callbacks.QBRTCSignalingCallback;
 import com.quickblox.videochat.webrtc.exception.QBRTCException;
 import com.quickblox.videochat.webrtc.exception.QBRTCSignalException;
 
-import org.jivesoftware.smack.SmackException;
 import org.webrtc.VideoCapturerAndroid;
 
 import java.io.Serializable;
@@ -69,7 +65,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
 
 
     private QBRTCSession currentSession;
-    public  List<QBUser> opponentsList;
+    public List<QBUser> opponentsList;
     private Runnable showIncomingCallWindowTask;
     private Handler showIncomingCallWindowTaskHandler;
     private BroadcastReceiver wifiStateReceiver;
@@ -83,9 +79,9 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     private SharedPreferences sharedPref;
     private RingtonePlayer ringtonePlayer;
 
-    public static void start(Context context, QBRTCTypes.QBConferenceType qbConferenceType,
+    public static void startIncomingCall(Context context, QBRTCTypes.QBConferenceType qbConferenceType,
                              List<Integer> opponentsIds, Map<String, String> userInfo,
-                             Consts.CALL_DIRECTION_TYPE callDirectionType){
+                             Consts.CALL_DIRECTION_TYPE callDirectionType) {
         Intent intent = new Intent(context, CallActivity.class);
         intent.putExtra(Consts.CALL_DIRECTION_TYPE_EXTRAS, callDirectionType);
         intent.putExtra(Consts.CALL_TYPE_EXTRAS, qbConferenceType);
@@ -97,36 +93,51 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         context.startActivity(intent);
     }
 
+    public static void startIncomingCall(Context context, String sessionId) {
+        Intent intent = new Intent(context, CallActivity.class);
+        intent.putExtra(Consts.INCOME_SESSION_ID, sessionId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
+    public static void startOpponents(Context context) {
+        Intent intent = new Intent(context, CallActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        opponentsList= DataHolder.getUsers();
+        opponentsList = DataHolder.getUsers();
 
         Log.d(TAG, "Activity. Thread id: " + Thread.currentThread().getId());
-
-        if (savedInstanceState == null) {
-            addOpponentsFragment();
-        }
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         initQBRTCClient();
         initWiFiManagerListener();
         ringtonePlayer = new RingtonePlayer(this, R.raw.beep);
+
+        parseExtras(getIntent().getExtras(), savedInstanceState);
+
+    }
+
+    private void parseExtras(Bundle extras, Bundle savedInstanceState) {
+        if (extras != null && !TextUtils.isEmpty(extras.getString(
+                Consts.INCOME_SESSION_ID))) {
+            onReceiveNewSession(rtcClient.getSession(extras.getString(
+                    Consts.INCOME_SESSION_ID)));
+            return;
+        }
+        if (savedInstanceState == null) {
+            addOpponentsFragment();
+        }
     }
 
     private void initQBRTCClient() {
         rtcClient = QBRTCClient.getInstance(this);
-        // Add signalling manager
-        QBChatService.getInstance().getVideoChatWebRTCSignalingManager().addSignalingManagerListener(new QBVideoChatSignalingManagerListener() {
-            @Override
-            public void signalingCreated(QBSignaling qbSignaling, boolean createdLocally) {
-                if (!createdLocally) {
-                    rtcClient.addSignaling((QBWebRTCSignaling) qbSignaling);
-                }
-            }
-        });
 
         rtcClient.setCameraErrorHendler(new VideoCapturerAndroid.CameraErrorHandler() {
             @Override
@@ -141,18 +152,8 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         });
 
 
-        // Configure
-        //
-        QBRTCConfig.setMaxOpponentsCount(6);
-        QBRTCConfig.setDisconnectTime(30);
-        QBRTCConfig.setAnswerTimeInterval(30l);
-        QBRTCConfig.setDebugEnabled(true);
-
-
         // Add activity as callback to RTCClient
         rtcClient.addSessionCallbacksListener(this);
-        // Start mange QBRTCSessions according to VideoCall parser's callbacks
-        rtcClient.prepareToProcessCalls();
     }
 
     private void initWiFiManagerListener() {
@@ -439,6 +440,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
 
                     stopTimer();
                     closeByWifiStateAllow = true;
+                    finish();
                 }
             }
         });
@@ -500,12 +502,12 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         }
     }
 
-    private Fragment getCurrentFragment(){
+    private Fragment getCurrentFragment() {
         return getFragmentManager().findFragmentById(R.id.fragment_container);
     }
 
     public void addOpponentsFragment() {
-        FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container,  new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
+        FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
     }
 
     public void removeIncomeCallFragment() {
@@ -520,7 +522,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     private void addIncomeCallFragment(QBRTCSession session) {
 
         Log.d(TAG, "QBRTCSession in addIncomeCallFragment is " + session);
-        if (session != null && isInFront) {
+        if (session != null) {
             Fragment fragment = new IncomeCallFragment();
             Bundle bundle = new Bundle();
             bundle.putSerializable("sessionDescription", session.getSessionDescription());
@@ -591,7 +593,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
     public void addVideoTrackCallbacksListener(QBRTCClientVideoTracksCallbacks videoTracksCallbacks) {
-        if (currentSession != null){
+        if (currentSession != null) {
             currentSession.addVideoTrackCallbacksListener(videoTracksCallbacks);
         }
     }
@@ -617,7 +619,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
     public void showSettings() {
-       SettingsActivity.start(this);
+        SettingsActivity.start(this);
     }
 
     public SharedPreferences getDefaultSharedPrefs() {
@@ -638,7 +640,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         OUTCOME_CALL_MADE;
     }
 
-    @Override
+    /*@Override
     public void onBackPressed() {
         Fragment fragment = getFragmentManager().findFragmentByTag(CONVERSATION_CALL_FRAGMENT);
         if (fragment == null) {
@@ -652,7 +654,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                 }
             }
         }
-    }
+    }*/
 
     @Override
     protected void onDestroy() {
