@@ -7,8 +7,8 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.quickblox.sample.groupchatwebrtc.activities.ListUsersActivity;
 import com.quickblox.sample.groupchatwebrtc.R;
+import com.quickblox.sample.groupchatwebrtc.managers.ResourcesManager;
 import com.quickblox.users.model.QBUser;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ public class UsersAdapter extends BaseAdapter {
         }
 
         holder.userNumber.setText(String.valueOf(position+1));
-        holder.userNumber.setBackgroundResource(ListUsersActivity.resourceSelector(position));
+        holder.userNumber.setBackgroundResource(ResourcesManager.resourceSelector(position));
         holder.loginAs.setText(R.string.login_as);
         holder.fullName.setText(user.get(position).getFullName());
 

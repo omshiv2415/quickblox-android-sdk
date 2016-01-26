@@ -91,6 +91,23 @@ public class DataHolder {
             newUser.setFullName(user.getFullName());
             usersList.add(newUser);
         }
+
+        //
+        //
+        usersList.clear();
+
+        QBUser user = new QBUser("webrtc_user_igor1", PASSWORD);
+        user.setId(8657847);
+        user.setFullName("User 1");
+        usersList.add(user);
+        //
+        user = new QBUser("webrtc_user_igor2", PASSWORD);
+        user.setId(8657853);
+        user.setFullName("User 2");
+        usersList.add(user);
+        //
+        //
+
         return usersList;
     }
 

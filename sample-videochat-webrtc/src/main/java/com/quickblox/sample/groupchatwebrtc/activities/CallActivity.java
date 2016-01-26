@@ -28,7 +28,7 @@ import com.quickblox.sample.groupchatwebrtc.fragments.IncomeCallFragment;
 import com.quickblox.sample.groupchatwebrtc.fragments.OpponentsFragment;
 import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
 import com.quickblox.sample.groupchatwebrtc.util.DialogUtil;
-import com.quickblox.sample.groupchatwebrtc.util.FragmentExecuotr;
+import com.quickblox.sample.groupchatwebrtc.util.FragmentExecutor;
 import com.quickblox.sample.groupchatwebrtc.util.RingtonePlayer;
 import com.quickblox.sample.groupchatwebrtc.util.SettingsUtil;
 import com.quickblox.users.model.QBUser;
@@ -130,7 +130,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         //
         QBRTCConfig.setMaxOpponentsCount(6);
         QBRTCConfig.setDisconnectTime(30);
-        QBRTCConfig.setAnswerTimeInterval(30l);
+        QBRTCConfig.setAnswerTimeInterval(60l);
         QBRTCConfig.setDebugEnabled(true);
 
 
@@ -490,7 +490,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
     public void addOpponentsFragment() {
-        FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container,  new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
+        FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container,  new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
     }
 
     public void removeIncomeCallFragment() {
@@ -498,7 +498,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         Fragment fragment = fragmentManager.findFragmentByTag(INCOME_CALL_FRAGMENT);
 
         if (fragment != null) {
-            FragmentExecuotr.removeFragment(fragmentManager, fragment);
+            FragmentExecutor.removeFragment(fragmentManager, fragment);
         }
     }
 
@@ -512,7 +512,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
             bundle.putIntegerArrayList("opponents", new ArrayList<>(session.getOpponents()));
             bundle.putInt(Consts.CONFERENCE_TYPE, session.getConferenceType().getValue());
             fragment.setArguments(bundle);
-            FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, fragment, INCOME_CALL_FRAGMENT);
+            FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container, fragment, INCOME_CALL_FRAGMENT);
         } else {
             Log.d(TAG, "SKIP addIncomeCallFragment method");
         }
@@ -523,15 +523,18 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                                                  Map<String, String> userInfo) {
         QBRTCSession newSessionWithOpponents = rtcClient.createNewSessionWithOpponents(
                 getOpponentsIds(opponents), qbConferenceType);
+
         SettingsUtil.setSettingsStrategy(opponents,
                 getDefaultSharedPrefs(),
                 this);
-        Log.d("Crash", "addConversationFragmentStartCall. Set session " + newSessionWithOpponents);
+
         initCurrentSession(newSessionWithOpponents);
+
         ConversationFragment fragment = ConversationFragment.newInstance(opponents, opponents.get(0).getFullName(),
                 qbConferenceType, userInfo,
                 StartConversetionReason.OUTCOME_CALL_MADE, getCurrentSession().getSessionID());
-        FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, fragment, CONVERSATION_CALL_FRAGMENT);
+        FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container, fragment, CONVERSATION_CALL_FRAGMENT);
+
         ringtonePlayer.play(true);
     }
 
@@ -562,7 +565,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
                     session.getConferenceType(), session.getUserInfo(),
                     StartConversetionReason.INCOME_CALL_FOR_ACCEPTION, getCurrentSession().getSessionID());
             // Start conversation fragment
-            FragmentExecuotr.addFragment(getFragmentManager(), R.id.fragment_container, fragment, CONVERSATION_CALL_FRAGMENT);
+            FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container, fragment, CONVERSATION_CALL_FRAGMENT);
         }
     }
 

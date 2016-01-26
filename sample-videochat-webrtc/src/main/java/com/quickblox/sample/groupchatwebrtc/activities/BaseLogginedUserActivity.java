@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
+import com.quickblox.sample.groupchatwebrtc.managers.ResourcesManager;
 import com.quickblox.users.model.QBUser;
 
 
@@ -38,7 +39,7 @@ public class BaseLogginedUserActivity extends Activity {
         QBUser loggedUser = DataHolder.getLoggedUser();
         if (loggedUser != null ) {
             int number = DataHolder.getUserIndexByID(loggedUser.getId());
-            numberOfListAB.setBackgroundResource(ListUsersActivity.resourceSelector(number));
+            numberOfListAB.setBackgroundResource(ResourcesManager.resourceSelector(number));
             numberOfListAB.setText(String.valueOf(number+1));
 
             TextView loginAsAB = (TextView) mCustomView.findViewById(R.id.loginAsAB);

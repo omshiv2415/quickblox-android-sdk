@@ -15,9 +15,18 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.quickblox.chat.QBChatService;
+import com.quickblox.core.QBEntityCallbackImpl;
+import com.quickblox.core.helper.StringifyArrayList;
+import com.quickblox.messages.QBMessages;
+import com.quickblox.messages.model.QBEnvironment;
+import com.quickblox.messages.model.QBEvent;
+import com.quickblox.messages.model.QBNotificationType;
 import com.quickblox.sample.groupchatwebrtc.activities.CallActivity;
 import com.quickblox.sample.groupchatwebrtc.adapters.OpponentsAdapter;
 import com.quickblox.sample.groupchatwebrtc.R;
+import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
+import com.quickblox.sample.groupchatwebrtc.managers.ResourcesManager;
+import com.quickblox.sample.groupchatwebrtc.managers.UserCredentialsStorageManager;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
@@ -118,38 +127,77 @@ public class OpponentsFragment extends Fragment implements View.OnClickListener,
     @Override
     public void onClick(View v) {
 
-        if (opponentsAdapter.getSelected().isEmpty()){
+        List<QBUser> selectedUsers = opponentsAdapter.getSelected();
+
+        if (selectedUsers.isEmpty()){
             Toast.makeText(getActivity(), "Choose one opponent", Toast.LENGTH_LONG).show();
             return;
         }
 
-        if (opponentsAdapter.getSelected().size() > QBRTCConfig.getMaxOpponentsCount()){
+        if (selectedUsers.size() > QBRTCConfig.getMaxOpponentsCount()){
             Toast.makeText(getActivity(), "Max number of opponents is 6", Toast.LENGTH_LONG).show();
             return;
         }
-            QBRTCTypes.QBConferenceType qbConferenceType = null;
 
-            //Init conference type
-            switch (v.getId()) {
-                case R.id.btnAudioCall:
-                    qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_AUDIO;
-                    break;
+        QBRTCTypes.QBConferenceType qbConferenceType = null;
 
-                case R.id.btnVideoCall:
-                    // get call type
-                    qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_VIDEO;
+        //Init conference type
+        switch (v.getId()) {
+            case R.id.btnAudioCall:
+                qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_AUDIO;
+                break;
 
-                    break;
-            }
+            case R.id.btnVideoCall:
+                // get call type
+                qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_VIDEO;
+
+                break;
+        }
 
         Map<String, String> userInfo = new HashMap<>();
-            userInfo.put("any_custom_data", "some data");
-            userInfo.put("my_avatar_url", "avatar_reference");
+        userInfo.put("any_custom_data", "some data");
+        userInfo.put("my_avatar_url", "avatar_reference");
 
-            ((CallActivity) getActivity())
-                    .addConversationFragmentStartCall(opponentsAdapter.getSelected(),
-                            qbConferenceType, userInfo);
+        ((CallActivity) getActivity())
+                    .addConversationFragmentStartCall(selectedUsers, qbConferenceType, userInfo);
 
+        // send a push about new call
+        //
+        sendPushNotification(selectedUsers);
+    }
+
+    private void sendPushNotification(List<QBUser> users){
+        QBUser loggedUser = DataHolder.getLoggedUser();
+        if (loggedUser == null){
+            return;
+        }
+
+        int number = DataHolder.getUserIndexByID(loggedUser.getId());
+        String pushText = "User " + String.valueOf(number + 1) + " is calling you";
+
+        // recipients
+        StringifyArrayList<Integer> userIds = new StringifyArrayList<>();
+        for(QBUser user : users) {
+            userIds.add(user.getId());
+        }
+
+        QBEvent event = new QBEvent();
+        event.setUserIds(userIds);
+        event.setEnvironment(QBEnvironment.DEVELOPMENT);
+        event.setNotificationType(QBNotificationType.PUSH);
+        event.setMessage(pushText);
+
+        QBMessages.createEvent(event, new QBEntityCallbackImpl<QBEvent>() {
+            @Override
+            public void onSuccess(QBEvent qbEvent, Bundle args) {
+                // sent
+            }
+
+            @Override
+            public void onError(List<String> errors) {
+                Log.e(TAG, errors.toString());
+            }
+        });
     }
 
     @Override
@@ -171,6 +219,9 @@ public class OpponentsFragment extends Fragment implements View.OnClickListener,
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.log_out:
+
+                UserCredentialsStorageManager.clear(this.getActivity());
+
                 try {
                     QBRTCClient.getInstance(getActivity()).destroy();
                     QBChatService.getInstance().logout();

@@ -1,7 +1,6 @@
 package com.quickblox.sample.groupchatwebrtc.activities;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -16,14 +15,16 @@ import com.crashlytics.android.Crashlytics;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.auth.model.QBSession;
 import com.quickblox.chat.QBChatService;
-import com.quickblox.core.QBEntityCallback;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.QBSettings;
 import com.quickblox.core.request.QBPagedRequestBuilder;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.adapters.UsersAdapter;
 import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
+import com.quickblox.sample.groupchatwebrtc.managers.UserCredentialsStorageManager;
 import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
+import com.quickblox.sample.groupchatwebrtc.pushnotifications.CheckPlayService;
+import com.quickblox.sample.groupchatwebrtc.pushnotifications.RegistrationIntentService;
 import com.quickblox.users.QBUsers;
 import com.quickblox.users.model.QBUser;
 
@@ -37,7 +38,7 @@ import io.fabric.sdk.android.Fabric;
 /**
  * QuickBlox team
  */
-public class ListUsersActivity extends Activity {
+public class LoginActivity extends Activity {
 
     private static final String TAG = "ListUsersActivity";
 
@@ -46,7 +47,6 @@ public class ListUsersActivity extends Activity {
     private UsersAdapter usersListAdapter;
     private ListView usersList;
     private ProgressBar progressBar;
-    private Context context;
     private static QBChatService chatService;
     private static ArrayList<QBUser> users = new ArrayList<>();
     private volatile boolean resultReceived = true;
@@ -76,21 +76,17 @@ public class ListUsersActivity extends Activity {
 
     private void createAppSession() {
         showProgress(true);
-        QBAuth.createSession(new QBEntityCallback<QBSession>() {
+        QBAuth.createSession(new QBEntityCallbackImpl<QBSession>() {
             @Override
             public void onSuccess(QBSession qbSession, Bundle bundle) {
                 showProgress(false);
+
                 loadUsers();
             }
 
             @Override
-            public void onSuccess() {
-
-            }
-
-            @Override
             public void onError(List<String> list) {
-                Toast.makeText(ListUsersActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
                 showProgress(false);
             }
         });
@@ -101,96 +97,6 @@ public class ListUsersActivity extends Activity {
         progressBar = (ProgressBar) findViewById(R.id.loginPB);
         progressBar.setVisibility(View.INVISIBLE);
 
-    }
-
-    public static int resourceSelector(int number) {
-        int resStr = -1;
-        switch (number) {
-            case 0:
-                resStr = R.drawable.shape_oval_spring_bud;
-                break;
-            case 1:
-                resStr = R.drawable.shape_oval_orange;
-                break;
-            case 2:
-                resStr = R.drawable.shape_oval_water_bondi_beach;
-                break;
-            case 3:
-                resStr = R.drawable.shape_oval_blue_green;
-                break;
-            case 4:
-                resStr = R.drawable.shape_oval_lime;
-                break;
-            case 5:
-                resStr = R.drawable.shape_oval_mauveine;
-                break;
-            case 6:
-                resStr = R.drawable.shape_oval_gentianaceae_blue;
-                break;
-            case 7:
-                resStr = R.drawable.shape_oval_blue;
-                break;
-            case 8:
-                resStr = R.drawable.shape_oval_blue_krayola;
-                break;
-            case 9:
-                resStr = R.drawable.shape_oval_coral;
-                break;
-            default:
-                resStr = resourceSelector(number % 10);
-        }
-        return resStr;
-    }
-
-    public static int selectBackgrounForOpponent(int number) {
-        int resStr = -1;
-        switch (number) {
-            case 0:
-                resStr = R.drawable.rectangle_rounded_spring_bud;
-                break;
-            case 1:
-                resStr = R.drawable.rectangle_rounded_orange;
-                break;
-            case 2:
-                resStr = R.drawable.rectangle_rounded_water_bondi_beach;
-                break;
-            case 3:
-                resStr = R.drawable.rectangle_rounded_blue_green;
-                break;
-            case 4:
-                resStr = R.drawable.rectangle_rounded_lime;
-                break;
-            case 5:
-                resStr = R.drawable.rectangle_rounded_mauveine;
-                break;
-            case 6:
-                resStr = R.drawable.rectangle_rounded_gentianaceae_blue;
-                break;
-            case 7:
-                resStr = R.drawable.rectangle_rounded_blue;
-                break;
-            case 8:
-                resStr = R.drawable.rectangle_rounded_blue_krayola;
-                break;
-            case 9:
-                resStr = R.drawable.rectangle_rounded_coral;
-                break;
-            default:
-                resStr = selectBackgrounForOpponent(number % 10);
-        }
-        return resStr;
-    }
-
-    public static int getUserIndex(int id) {
-        int index = 0;
-
-        for (QBUser usr : users) {
-            if (usr.getId().equals(id)) {
-                index = (users.indexOf(usr)) + 1;
-                break;
-            }
-        }
-        return index;
     }
 
     private void initUsersList() {
@@ -212,6 +118,7 @@ public class ListUsersActivity extends Activity {
         requestBuilder.setPerPage(getResources().getInteger(R.integer.users_count));
         List<String> tags = new LinkedList<>();
         tags.add(tag);
+        //
         QBUsers.getUsersByTags(tags, requestBuilder, new QBEntityCallbackImpl<ArrayList<QBUser>>() {
             @Override
             public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
@@ -220,13 +127,25 @@ public class ListUsersActivity extends Activity {
                 users.clear();
                 users.addAll(DataHolder.createUsersList(qbUsers));
                 initUsersList();
+
+                // check if a user already logged in
+                //
+                String []userCredentials = UserCredentialsStorageManager.getCredentials(LoginActivity.this);
+                if(userCredentials !=  null){
+                    String login = userCredentials[0];
+                    String password = userCredentials[1];
+
+                    QBUser loggedInUser = new QBUser(login, password);
+                    createUserSession(loggedInUser);
+                }
+
             }
 
             @Override
             public void onError(List<String> strings) {
                 showProgress(false);
 
-                Toast.makeText(ListUsersActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "onError()");
             }
         });
@@ -238,7 +157,6 @@ public class ListUsersActivity extends Activity {
 
     private long upTime = 0l;
 
-    private QBUser currentUser;
     AdapterView.OnItemClickListener clicklistener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             if (!resultReceived || (SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY){
@@ -246,29 +164,35 @@ public class ListUsersActivity extends Activity {
             }
             resultReceived = false;
             upTime = SystemClock.uptimeMillis();
-            currentUser = usersListAdapter.getItem(position);
 
-            createSession(currentUser.getLogin(), currentUser.getPassword());
+            QBUser selectedUser = usersListAdapter.getItem(position);
+            createUserSession(selectedUser);
         }
     };
 
 
-    private void createSession(final String login, final String password) {
+    private void createUserSession(final QBUser user) {
 
         showProgress(true);
 
-        final QBUser user = new QBUser(login, password);
+        final String login = user.getLogin();
+        final String password = user.getPassword();
+
         QBAuth.createSession(login, password, new QBEntityCallbackImpl<QBSession>() {
             @Override
             public void onSuccess(QBSession session, Bundle bundle) {
                 Log.d(TAG, "onSuccess create session with params");
                 user.setId(session.getUserId());
 
-                DataHolder.setLoggedUser(currentUser);
+                // save current logged in user
+                DataHolder.setLoggedUser(user);
+
                 if (chatService.isLoggedIn()){
                     resultReceived = true;
                     startCallActivity(login);
                 } else {
+                    subscribeToPushNotifications();
+
                     chatService.login(user, new QBEntityCallbackImpl<QBUser>() {
 
                         @Override
@@ -276,13 +200,17 @@ public class ListUsersActivity extends Activity {
                             Log.d(TAG, "onSuccess login to chat");
                             resultReceived = true;
 
-                            ListUsersActivity.this.runOnUiThread(new Runnable() {
+                            LoginActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     showProgress(false);
                                 }
                             });
 
+                            // save current user to preferences
+                            UserCredentialsStorageManager.saveUserCredentials(LoginActivity.this, login, password);
+
+                            // show Call activity
                             startCallActivity(login);
                         }
 
@@ -292,7 +220,7 @@ public class ListUsersActivity extends Activity {
 
                             showProgress(false);
 
-                            Toast.makeText(ListUsersActivity.this, "Error when login", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, "Error when login", Toast.LENGTH_SHORT).show();
                             for (Object error : errors) {
                                 Log.d(TAG, error.toString());
                             }
@@ -308,20 +236,32 @@ public class ListUsersActivity extends Activity {
 
                 progressBar.setVisibility(View.INVISIBLE);
 
-                Toast.makeText(ListUsersActivity.this, "Error when login, check test users login and password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Error when login, check test users login and password", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void startCallActivity(String login) {
-        Intent intent = new Intent(ListUsersActivity.this, CallActivity.class);
-        intent.putExtra("login", login);
-        startActivityForResult(intent, Consts.CALL_ACTIVITY_CLOSE);
+    private void subscribeToPushNotifications(){
+        boolean gcmSupported = CheckPlayService.checkPlayServices(this);
+
+        Log.d(TAG, "gcmSupported: " + gcmSupported);
+
+        if(!gcmSupported){
+            // do something
+        }else{
+            // Start IntentService to register this application with GCM.
+            Log.d(TAG, "Start IntentService to register this application with GCM");
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+    private void startCallActivity(String login) {
+        Log.d(TAG, "startCallActivity, login: " + login);
+
+        Intent intent = new Intent(LoginActivity.this, CallActivity.class);
+        intent.putExtra("login", login);
+        startActivityForResult(intent, Consts.CALL_ACTIVITY_CLOSE);
     }
 
     @Override

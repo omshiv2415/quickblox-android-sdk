@@ -18,4 +18,6 @@ public class Consts {
 
     public final static String OPPONENTS = "opponents";
     public static final String CONFERENCE_TYPE = "conference_type";
+
+
 }
