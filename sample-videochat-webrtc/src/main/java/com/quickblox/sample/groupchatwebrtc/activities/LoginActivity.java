@@ -15,6 +15,7 @@ import com.crashlytics.android.Crashlytics;
 import com.quickblox.auth.QBAuth;
 import com.quickblox.auth.model.QBSession;
 import com.quickblox.chat.QBChatService;
+import com.quickblox.core.QBEntityCallback;
 import com.quickblox.core.QBEntityCallbackImpl;
 import com.quickblox.core.QBSettings;
 import com.quickblox.core.request.QBPagedRequestBuilder;
@@ -49,39 +50,59 @@ public class LoginActivity extends Activity {
     private ProgressBar progressBar;
     private static QBChatService chatService;
     private static ArrayList<QBUser> users = new ArrayList<>();
-    private volatile boolean resultReceived = true;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Init Fabric
         Fabric.with(this, new Crashlytics());
-        setContentView(R.layout.activity_login);
 
         initUI();
 
+        // Initialise QuickBlox
+        //
         QBSettings.getInstance().fastConfigInit(Consts.APP_ID, Consts.AUTH_KEY, Consts.AUTH_SECRET);
-
-        if (getActionBar() != null) {
-            getActionBar().setTitle(getResources().getString(R.string.opponentsListActionBarTitle));
-        }
-
+        //
         QBChatService.setDebugEnabled(true);
         if (!QBChatService.isInitialized()) {
             QBChatService.init(this);
             chatService = QBChatService.getInstance();
         }
-        createAppSession();
+
+        // check if a user already logged in
+        //
+        String []userCredentials = UserCredentialsStorageManager.getCredentials(LoginActivity.this);
+        if(userCredentials != null){
+            String login = userCredentials[0];
+            String password = userCredentials[1];
+
+            QBUser loggedInUser = new QBUser(login, password);
+            createUserSession(loggedInUser, true);
+        }else{
+            createAppSession();
+        }
     }
 
     private void createAppSession() {
         showProgress(true);
+
         QBAuth.createSession(new QBEntityCallbackImpl<QBSession>() {
             @Override
             public void onSuccess(QBSession qbSession, Bundle bundle) {
                 showProgress(false);
 
-                loadUsers();
+                loadUsers(new QBEntityCallbackImpl<ArrayList<QBUser>>() {
+                    @Override
+                    public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onError(List list) {
+
+                    }
+                });
             }
 
             @Override
@@ -93,10 +114,15 @@ public class LoginActivity extends Activity {
     }
 
     private void initUI() {
+        setContentView(R.layout.activity_login);
+
         usersList = (ListView) findViewById(R.id.usersListView);
         progressBar = (ProgressBar) findViewById(R.id.loginPB);
         progressBar.setVisibility(View.INVISIBLE);
 
+        if (getActionBar() != null) {
+            getActionBar().setTitle(getResources().getString(R.string.opponentsListActionBarTitle));
+        }
     }
 
     private void initUsersList() {
@@ -107,11 +133,11 @@ public class LoginActivity extends Activity {
         usersList.setOnItemClickListener(clicklistener);
     }
 
-    private void loadUsers(){
-        loadUsers(getString(R.string.users_tag));
+    private void loadUsers(QBEntityCallback callback){
+        loadUsers(getString(R.string.users_tag), callback);
     }
 
-    private void loadUsers(String tag){
+    private void loadUsers(String tag, final QBEntityCallback callback){
         showProgress(true);
 
         QBPagedRequestBuilder requestBuilder = new QBPagedRequestBuilder();
@@ -128,17 +154,7 @@ public class LoginActivity extends Activity {
                 users.addAll(DataHolder.createUsersList(qbUsers));
                 initUsersList();
 
-                // check if a user already logged in
-                //
-                String []userCredentials = UserCredentialsStorageManager.getCredentials(LoginActivity.this);
-                if(userCredentials !=  null){
-                    String login = userCredentials[0];
-                    String password = userCredentials[1];
-
-                    QBUser loggedInUser = new QBUser(login, password);
-                    createUserSession(loggedInUser);
-                }
-
+                callback.onSuccess(qbUsers, bundle);
             }
 
             @Override
@@ -146,7 +162,8 @@ public class LoginActivity extends Activity {
                 showProgress(false);
 
                 Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "onError()");
+
+                callback.onError(strings);
             }
         });
     }
@@ -159,19 +176,18 @@ public class LoginActivity extends Activity {
 
     AdapterView.OnItemClickListener clicklistener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            if (!resultReceived || (SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY){
+            if ((SystemClock.uptimeMillis() - upTime) < ON_ITEM_CLICK_DELAY){
                 return;
             }
-            resultReceived = false;
             upTime = SystemClock.uptimeMillis();
 
             QBUser selectedUser = usersListAdapter.getItem(position);
-            createUserSession(selectedUser);
+            createUserSession(selectedUser, false);
         }
     };
 
 
-    private void createUserSession(final QBUser user) {
+    private void createUserSession(final QBUser user, final boolean restoreSession) {
 
         showProgress(true);
 
@@ -187,55 +203,54 @@ public class LoginActivity extends Activity {
                 // save current logged in user
                 DataHolder.setLoggedUser(user);
 
-                if (chatService.isLoggedIn()){
-                    resultReceived = true;
-                    startCallActivity(login);
-                } else {
-                    subscribeToPushNotifications();
+                subscribeToPushNotifications();
 
-                    chatService.login(user, new QBEntityCallbackImpl<QBUser>() {
+                chatService.login(user, new QBEntityCallbackImpl<QBUser>() {
 
-                        @Override
-                        public void onSuccess() {
-                            Log.d(TAG, "onSuccess login to chat");
-                            resultReceived = true;
+                    @Override
+                    public void onSuccess() {
+                        Log.d(TAG, "onSuccess login to chat");
 
-                            LoginActivity.this.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    showProgress(false);
+                        LoginActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                showProgress(false);
+
+                                // save current user to preferences
+                                UserCredentialsStorageManager.saveUserCredentials(LoginActivity.this, login, password);
+
+                                if(restoreSession){
+                                    loadUsers(new QBEntityCallbackImpl<ArrayList<QBUser>>() {
+                                        @Override
+                                        public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
+                                            // show Call activity
+                                            startCallActivity(login);
+                                        }
+
+                                        @Override
+                                        public void onError(List list) {
+
+                                        }
+                                    });
+                                }else{
+                                    // show Call activity
+                                    startCallActivity(login);
                                 }
-                            });
-
-                            // save current user to preferences
-                            UserCredentialsStorageManager.saveUserCredentials(LoginActivity.this, login, password);
-
-                            // show Call activity
-                            startCallActivity(login);
-                        }
-
-                        @Override
-                        public void onError(List errors) {
-                            resultReceived = true;
-
-                            showProgress(false);
-
-                            Toast.makeText(LoginActivity.this, "Error when login", Toast.LENGTH_SHORT).show();
-                            for (Object error : errors) {
-                                Log.d(TAG, error.toString());
                             }
-                        }
-                    });
-                }
+                        });
+                    }
 
+                    @Override
+                    public void onError(List errors) {
+                        showProgress(false);
+                        Toast.makeText(LoginActivity.this, "Error when login", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             @Override
             public void onError(List<String> errors) {
-                resultReceived = true;
-
-                progressBar.setVisibility(View.INVISIBLE);
-
+                showProgress(false);
                 Toast.makeText(LoginActivity.this, "Error when login, check test users login and password", Toast.LENGTH_SHORT).show();
             }
         });
