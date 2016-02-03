@@ -20,4 +20,7 @@ public class Consts {
     public static final String CONFERENCE_TYPE = "conference_type";
 
 
+    public static final String NEW_CALL_NOTIFICATION = "newCallRequest";
+
+
 }

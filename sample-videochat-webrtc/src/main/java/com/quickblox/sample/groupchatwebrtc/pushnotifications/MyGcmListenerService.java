@@ -2,17 +2,23 @@ package com.quickblox.sample.groupchatwebrtc.pushnotifications;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
+import android.telecom.Call;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 import com.quickblox.sample.groupchatwebrtc.R;
+import com.quickblox.sample.groupchatwebrtc.activities.CallActivity;
 import com.quickblox.sample.groupchatwebrtc.activities.LoginActivity;
+import com.quickblox.sample.groupchatwebrtc.app.Application;
+import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 
 public class MyGcmListenerService extends GcmListenerService {
 
@@ -44,7 +50,10 @@ public class MyGcmListenerService extends GcmListenerService {
          * In some cases it may be useful to show a notification indicating to the user
          * that a message was received.
          */
-        sendNotification(message);
+//        sendNotification(message);
+
+        showActivity();
+
         // [END_EXCLUDE]
     }
     // [END receive_message]
@@ -73,5 +82,16 @@ public class MyGcmListenerService extends GcmListenerService {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+    }
+
+    private void showActivity(){
+        if(Application.getInstance().getNumberOfCreatedActivities() == 0) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            this.startActivity(intent);
+        }else if(Application.getInstance().getNumberOfActivitiesInForeground() == 0) {
+            Intent intent = new Intent(Consts.NEW_CALL_NOTIFICATION);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }
     }
 }

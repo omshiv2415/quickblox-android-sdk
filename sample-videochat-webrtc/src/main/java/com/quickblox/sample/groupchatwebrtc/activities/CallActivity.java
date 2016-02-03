@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -88,7 +89,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         setContentView(R.layout.activity_main);
         opponentsList= DataHolder.getUsers();
 
-        Log.d(TAG, "Activity. Thread id: " + Thread.currentThread().getId());
+        Log.d(TAG, "onCreate");
 
         if (savedInstanceState == null) {
             addOpponentsFragment();
@@ -99,6 +100,31 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         initQBRTCClient();
         initWiFiManagerListener();
         ringtonePlayer = new RingtonePlayer(this, R.raw.beep);
+
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mCallRequestReceiver,
+                new IntentFilter(Consts.NEW_CALL_NOTIFICATION));
+    }
+
+    private BroadcastReceiver mCallRequestReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("receiver", "Got message");
+
+            Intent startActivityIntent = new Intent(context, CallActivity.class);
+            startActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(startActivityIntent);
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mCallRequestReceiver);
+
+        opponentsList = null;
+        OpponentsAdapter.i = 0;
+
+        super.onDestroy();
     }
 
     private void initQBRTCClient() {
@@ -642,12 +668,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        opponentsList = null;
-        OpponentsAdapter.i = 0;
-    }
+
 
     public interface QBRTCSessionUserCallback {
         void onUserNotAnswer(QBRTCSession session, Integer userId);
