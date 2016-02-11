@@ -52,7 +52,7 @@ public class MyGcmListenerService extends GcmListenerService {
          */
 //        sendNotification(message);
 
-        showActivity();
+        showActivityOrNotification(message);
 
         // [END_EXCLUDE]
     }
@@ -84,14 +84,13 @@ public class MyGcmListenerService extends GcmListenerService {
         notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 
-    private void showActivity(){
+    private void showActivityOrNotification(String message){
         if(Application.getInstance().getNumberOfCreatedActivities() == 0) {
             Intent intent = new Intent(this, LoginActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            this.startActivity(intent);
-        }else if(Application.getInstance().getNumberOfActivitiesInForeground() == 0) {
-            Intent intent = new Intent(Consts.NEW_CALL_NOTIFICATION);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }else{
+            sendNotification(message);
         }
     }
 }
