@@ -5,11 +5,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.media.AudioManager;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.os.*;
+import android.os.Process;
 import android.support.annotation.DimenRes;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
@@ -67,6 +67,14 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private static final long TOGGLE_CAMERA_DELAY = 1000;
     private static final long LOCAL_TRACk_INITIALIZE_DELAY = 500;
 
+    // Bluetooth audio SCO states. Example of valid state sequence:
+    // SCO_INVALID -> SCO_TURNING_ON -> SCO_ON -> SCO_TURNING_OFF -> SCO_OFF.
+    private static final int STATE_BLUETOOTH_SCO_INVALID = -1;
+    private static final int STATE_BLUETOOTH_SCO_OFF = 0;
+    private static final int STATE_BLUETOOTH_SCO_ON = 1;
+    private static final int STATE_BLUETOOTH_SCO_TURNING_ON = 2;
+    private static final int STATE_BLUETOOTH_SCO_TURNING_OFF = 3;
+
     private String TAG = ConversationFragment.class.getSimpleName();
     private ArrayList<QBUser> opponents;
     private int qbConferenceType;
@@ -77,6 +85,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private ToggleButton switchCameraToggle;
     private ToggleButton dynamicToggleVideoCall;
     private ToggleButton micToggleVideoCall;
+    private ToggleButton bluetoothAudioToggle;
     private ImageButton handUpVideoCall;
     private View myCameraOff;
     private TextView incUserName;
@@ -98,6 +107,12 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private QBRTCVideoTrack localVideoTrack;
     private Handler mainHandler;
     private AudioManager localAudioManager;
+    private BroadcastReceiver mBluetoothHeadsetReceiver;
+    private boolean DEVICE_BLUETOOTH_HEADSET_PLAGGED;
+    private BroadcastReceiver mBluetoothScoReceiver;
+    private Context mContext;
+    private AudioManager mAudioManager;
+    private int mBluetoothScoState = STATE_BLUETOOTH_SCO_INVALID;
 
     public static ConversationFragment newInstance(List<QBUser> opponents, String callerName,
                                                    QBRTCTypes.QBConferenceType qbConferenceType,
@@ -189,6 +204,8 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     public void onStart() {
 
         getActivity().registerReceiver(audioStreamReceiver, intentFilter);
+        registerForBluetoothHeadsetIntentBroadcast();
+        registerForBluetoothScoIntentBroadcast();
 
         super.onStart();
         QBRTCSession session = ((CallActivity) getActivity()).getCurrentSession();
@@ -209,6 +226,10 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     public void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate() from " + TAG);
         super.onCreate(savedInstanceState);
+        mContext = getActivity();
+
+        mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        checkBluetoothPermission();
 
         intentFilter = new IntentFilter();
         intentFilter.addAction(AudioManager.ACTION_HEADSET_PLUG);
@@ -240,10 +261,10 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
             initLocalViewUI(view);
         }
         dynamicToggleVideoCall = (ToggleButton) view.findViewById(R.id.dynamicToggleVideoCall);
+        bluetoothAudioToggle = (ToggleButton) view.findViewById(R.id.bluetoothAudioToggle);
+
         micToggleVideoCall = (ToggleButton) view.findViewById(R.id.micToggleVideoCall);
-
         actionVideoButtonsLayout = (LinearLayout) view.findViewById(R.id.element_set_video_buttons);
-
         handUpVideoCall = (ImageButton) view.findViewById(R.id.handUpVideoCall);
         incUserName = (TextView) view.findViewById(R.id.incUserName);
         incUserName.setText(callerName);
@@ -320,7 +341,9 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     @Override
     public void onStop() {
         super.onStop();
-        getActivity().unregisterReceiver(audioStreamReceiver);
+        mContext.unregisterReceiver(audioStreamReceiver);
+        unregisterForBluetoothHeadsetIntentBroadcast();
+        unregisterForBluetoothScoIntentBroadcast();
         ((CallActivity) getActivity()).removeRTCClientConnectionCallback(this);
         ((CallActivity) getActivity()).removeRTCSessionUserCallback(this);
     }
@@ -342,22 +365,23 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
             }
         });
 
-//        dynamicToggleVideoCall.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if (((CallActivity) getActivity()).getCurrentSession() != null) {
-//                    Log.d(TAG, "Dynamic switched!");
-////                    ((CallActivity) getActivity()).getCurrentSession().switchAudioOutput();
-////                    ((CallActivity) getActivity()).getCurrentSession().getMediaStreamManager().switchAudioOutput();
-//                }
-//            }
-//        });
-        dynamicToggleVideoCall.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        dynamicToggleVideoCall.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                setBluetoothEnabled(isChecked);
+            public void onClick(View v) {
+                if (((CallActivity) getActivity()).getCurrentSession() != null) {
+                    Log.d(TAG, "Dynamic switched!");
+                    if (!mAudioManager.isBluetoothScoOn())
+                    ((CallActivity) getActivity()).getCurrentSession().switchAudioOutput();
+                }
             }
         });
+
+//        bluetoothAudioToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                toggleBluetoothSco(isChecked);
+//            }
+//        });
 
         micToggleVideoCall.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -691,6 +715,196 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         }
     }
 
+    /**
+     * Registers receiver for the broadcasted intent related to BT headset
+     * availability or a change in connection state of the local Bluetooth
+     * adapter. Example: triggers when the BT device is turned on or off.
+     * BLUETOOTH permission is required to receive this one.
+     */
+    private void registerForBluetoothHeadsetIntentBroadcast() {
+        IntentFilter filter = new IntentFilter(
+                android.bluetooth.BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
+        /** Receiver which handles changes in BT headset availability. */
+        mBluetoothHeadsetReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                // A change in connection state of the Headset profile has
+                // been detected, e.g. BT headset has been connected or
+                // disconnected. This broadcast is *not* sticky.
+                int profileState = intent.getIntExtra(
+                        android.bluetooth.BluetoothHeadset.EXTRA_STATE,
+                        android.bluetooth.BluetoothHeadset.STATE_DISCONNECTED);
+
+                switch (profileState) {
+                    case android.bluetooth.BluetoothProfile.STATE_DISCONNECTED:
+                        // We do not have to explicitly call stopBluetoothSco()
+                        // since BT SCO will be disconnected automatically when
+                        // the BT headset is disabled.
+//                        synchronized (mLock) {
+//                            // Remove the BT device from the list of devices.
+//                            mAudioDevices[DEVICE_BLUETOOTH_HEADSET] = false;
+//                        }
+                        DEVICE_BLUETOOTH_HEADSET_PLAGGED = false;
+                        break;
+                    case android.bluetooth.BluetoothProfile.STATE_CONNECTED:
+                            // Add the BT device to the list of devices.
+                        DEVICE_BLUETOOTH_HEADSET_PLAGGED = true;
+                        break;
+                    case android.bluetooth.BluetoothProfile.STATE_CONNECTING:
+                        // Bluetooth service is switching from off to on.
+                        DEVICE_BLUETOOTH_HEADSET_PLAGGED = false;
+                        break;
+                    case android.bluetooth.BluetoothProfile.STATE_DISCONNECTING:
+                        // Bluetooth service is switching from on to off.
+                        DEVICE_BLUETOOTH_HEADSET_PLAGGED = false;
+                        break;
+                    default:
+//                        loge("Invalid state!");
+                        break;
+                }
+            }
+        };
+        mContext.registerReceiver(mBluetoothHeadsetReceiver, filter);
+    }
+
+    private void unregisterForBluetoothHeadsetIntentBroadcast() {
+        mContext.unregisterReceiver(mBluetoothHeadsetReceiver);
+        mBluetoothHeadsetReceiver = null;
+    }
+
+    /**
+     * Registers receiver for the broadcasted intent related the existence
+     * of a BT SCO channel. Indicates if BT SCO streaming is on or off.
+     */
+    private void registerForBluetoothScoIntentBroadcast() {
+        IntentFilter filter = new IntentFilter(
+                AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+        /** BroadcastReceiver implementation which handles changes in BT SCO. */
+        mBluetoothScoReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int state = intent.getIntExtra(
+                        AudioManager.EXTRA_SCO_AUDIO_STATE,
+                        AudioManager.SCO_AUDIO_STATE_DISCONNECTED);
+
+                switch (state) {
+                    case AudioManager.SCO_AUDIO_STATE_CONNECTED:
+                        mBluetoothScoState = STATE_BLUETOOTH_SCO_ON;
+                        break;
+                    case AudioManager.SCO_AUDIO_STATE_DISCONNECTED:
+                        mBluetoothScoState = STATE_BLUETOOTH_SCO_OFF;
+                        break;
+                    case AudioManager.SCO_AUDIO_STATE_CONNECTING:
+                        // do nothing
+                        break;
+                    default:
+                }
+            }
+        };
+        mContext.registerReceiver(mBluetoothScoReceiver, filter);
+    }
+
+    private void unregisterForBluetoothScoIntentBroadcast() {
+        mContext.unregisterReceiver(mBluetoothScoReceiver);
+        mBluetoothScoReceiver = null;
+    }
+
+    /**
+     * Enables BT audio using the SCO audio channel.
+     */
+    private void startBluetoothSco() {
+        Log.d(TAG, "startBluetoothSco()");
+        if (!hasBluetoothPermission()) {
+            Log.d(TAG, "!hasBluetoothPermission()");
+            return;
+        }
+//        if (mBluetoothScoState == STATE_BLUETOOTH_SCO_ON ||
+//                mBluetoothScoState == STATE_BLUETOOTH_SCO_TURNING_ON) {
+//            // Unable to turn on BT in this state.
+//            return;
+//        }
+//        // Check if audio is already routed to BT SCO; if so, just update
+//        // states but don't try to enable it again.
+//        if (mAudioManager.isBluetoothScoOn()) {
+//            Log.d(TAG, "mAudioManager.isBluetoothScoOn()");
+//            mBluetoothScoState = STATE_BLUETOOTH_SCO_ON;
+//            return;
+//        }
+//        mBluetoothScoState = STATE_BLUETOOTH_SCO_TURNING_ON;
+        mAudioManager.setMode(0);
+        mAudioManager.setBluetoothScoOn(true);
+        mAudioManager.setMode(AudioManager.MODE_IN_CALL);
+        Log.d(TAG, "startBluetoothSco() all done");
+    }
+
+    /**
+     * Disables BT audio using the SCO audio channel.
+     */
+    private void stopBluetoothSco() {
+        Log.d(TAG, "stopBluetoothSco()");
+        if (!hasBluetoothPermission()) {
+            Log.d(TAG, "!hasBluetoothPermission()");
+            return;
+        }
+//        if (mBluetoothScoState != STATE_BLUETOOTH_SCO_ON &&
+//                mBluetoothScoState != STATE_BLUETOOTH_SCO_TURNING_ON) {
+//            // No need to turn off BT in this state.
+//            return;
+//        }
+//        if (!mAudioManager.isBluetoothScoOn()) {
+//            // TODO(henrika): can we do anything else than logging here?
+//            return;
+//        }
+//        mBluetoothScoState = STATE_BLUETOOTH_SCO_TURNING_OFF;
+        mAudioManager.setBluetoothScoOn(false);
+        mAudioManager.stopBluetoothSco();
+        mAudioManager.setMode(AudioManager.MODE_NORMAL);
+        Log.d(TAG, "stopBluetoothSco() all done");
+    }
+
+    /**
+     * Checks if the process has BLUETOOTH permission or not.
+     */
+    private boolean hasBluetoothPermission() {
+        boolean hasBluetooth = mContext.checkPermission(
+                android.Manifest.permission.BLUETOOTH,
+                android.os.Process.myPid(),
+                Process.myUid()) == PackageManager.PERMISSION_GRANTED;
+        return hasBluetooth;
+    }
+
+    private void checkBluetoothPermission() {
+        boolean hasBluetooth = mContext.checkPermission(
+                android.Manifest.permission.BLUETOOTH,
+                android.os.Process.myPid(),
+                Process.myUid()) == PackageManager.PERMISSION_GRANTED;
+
+        if (hasBluetooth) {
+            mAudioManager.setBluetoothScoOn(hasBluetooth);
+            mAudioManager.setMode(AudioManager.MODE_IN_CALL);
+            mAudioManager.startBluetoothSco();
+        }
+
+    }
+
+    private void toggleBluetoothSco(boolean on) {
+//        if (!DEVICE_BLUETOOTH_HEADSET_PLAGGED){
+//            Log.d(TAG, )
+//            return;
+//        }
+
+
+
+        if (on){
+            Log.d(TAG, "bluetooth enable");
+            startBluetoothSco();
+            Log.d(TAG, "bluetooth enabled");
+        } else {
+            Log.d(TAG, "bluetooth disable");
+            stopBluetoothSco();
+            Log.d(TAG, "bluetooth disabled");
+        }
+    }
 
 }
 
