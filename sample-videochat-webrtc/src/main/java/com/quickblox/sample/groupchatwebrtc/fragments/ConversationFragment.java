@@ -97,6 +97,7 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
     private boolean isPeerToPeerCall;
     private QBRTCVideoTrack localVideoTrack;
     private Handler mainHandler;
+    private AudioManager localAudioManager;
 
     public static ConversationFragment newInstance(List<QBUser> opponents, String callerName,
                                                    QBRTCTypes.QBConferenceType qbConferenceType,
@@ -341,13 +342,20 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
             }
         });
 
-        dynamicToggleVideoCall.setOnClickListener(new View.OnClickListener() {
+//        dynamicToggleVideoCall.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if (((CallActivity) getActivity()).getCurrentSession() != null) {
+//                    Log.d(TAG, "Dynamic switched!");
+////                    ((CallActivity) getActivity()).getCurrentSession().switchAudioOutput();
+////                    ((CallActivity) getActivity()).getCurrentSession().getMediaStreamManager().switchAudioOutput();
+//                }
+//            }
+//        });
+        dynamicToggleVideoCall.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                if (((CallActivity) getActivity()).getCurrentSession() != null) {
-                    Log.d(TAG, "Dynamic switched!");
-                    ((CallActivity) getActivity()).getCurrentSession().switchAudioOutput();
-                }
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                setBluetoothEnabled(isChecked);
             }
         });
 
@@ -667,6 +675,23 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         }
 
     }
+
+    public void setBluetoothEnabled(boolean enabled) {
+        localAudioManager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE);
+
+        if (enabled) {
+            localAudioManager.setMode(0);
+            localAudioManager.setBluetoothScoOn(true);
+            localAudioManager.startBluetoothSco();
+            localAudioManager.setMode(AudioManager.MODE_IN_CALL);
+        } else {
+            localAudioManager.setBluetoothScoOn(false);
+            localAudioManager.stopBluetoothSco();
+            localAudioManager.setMode(AudioManager.MODE_NORMAL);
+        }
+    }
+
+
 }
 
 
