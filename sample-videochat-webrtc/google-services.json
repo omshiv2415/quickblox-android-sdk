@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_id": "quickblox.com:api-project-761750217637",
-    "project_number": "761750217637",
-    "name": "QuickBlox Android samples"
+    "project_id": "invtelecom-56f86",
+    "project_number": "838662189974",
+    "name": "InvTelecom"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:761750217637:android:c4299bc46191b0d7",
+        "mobilesdk_app_id": "1:838662189974:android:c4299bc46191b0d7",
         "client_id": "android:com.quickblox.sample.groupchatwebrtc",
         "client_type": 1,
         "android_client_info": {

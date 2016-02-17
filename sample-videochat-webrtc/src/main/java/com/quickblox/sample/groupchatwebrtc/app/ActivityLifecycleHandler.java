@@ -5,7 +5,9 @@ import android.app.Application;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.quickblox.sample.groupchatwebrtc.activities.LoginActivity;
+import com.quickblox.chat.QBChatService;
+
+import org.jivesoftware.smack.SmackException;
 
 /**
  * Created by igorkhomenko on 2/2/16.
@@ -29,13 +31,6 @@ public class ActivityLifecycleHandler implements Application.ActivityLifecycleCa
         return numberOfCreatedActivities;
     }
 
-    //
-
-    private boolean isLatestStoppedActivityIsCallOrSettings;
-
-    boolean isLatestStoppedActivityIsCallOrSettings(){
-        return isLatestStoppedActivityIsCallOrSettings;
-    }
 
     @Override
     public void onActivityCreated(Activity activity, Bundle bundle) {
@@ -61,12 +56,14 @@ public class ActivityLifecycleHandler implements Application.ActivityLifecycleCa
     public void onActivityStopped(Activity activity) {
         --numberOfActivitiesInForeground;
 
-        if (activity instanceof LoginActivity) {
-            Log.d(TAG, "stopping LoginActivity");
-            isLatestStoppedActivityIsCallOrSettings = false;
-        }else{
-            Log.d(TAG, "stopping CallActivity or SettingsActivity");
-            isLatestStoppedActivityIsCallOrSettings = true;
+        if(numberOfActivitiesInForeground == 0){
+            try {
+                QBChatService.getInstance().logout();
+                Log.d(TAG, "chat logout done");
+            } catch (SmackException.NotConnectedException e) {
+                Log.d(TAG, "chat logout error:");
+                e.printStackTrace();
+            }
         }
     }
 

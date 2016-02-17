@@ -4,9 +4,6 @@ package com.quickblox.sample.groupchatwebrtc.definitions;
  * QuickBlox team
  */
 public class Consts {
-    public static final String APP_ID = "92";
-    public static final String AUTH_KEY = "wJHdOcQSxXQGWx5";
-    public static final String AUTH_SECRET = "BTFsj7Rtt27DAmT";
 
     public static final String VERSION_NUMBER = "1.0";
 

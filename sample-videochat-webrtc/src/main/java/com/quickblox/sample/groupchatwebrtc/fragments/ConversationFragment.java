@@ -48,6 +48,7 @@ import com.quickblox.videochat.webrtc.view.QBRTCVideoTrack;
 import org.webrtc.VideoRenderer;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -119,6 +120,15 @@ public class ConversationFragment extends Fragment implements Serializable, QBRT
         }
         fragment.setArguments(bundle);
         return fragment;
+    }
+
+    @Override
+    public void onDetach() {
+        Log.d(TAG, "onDetach");
+
+        super.onDetach();
+
+
     }
 
     @Override

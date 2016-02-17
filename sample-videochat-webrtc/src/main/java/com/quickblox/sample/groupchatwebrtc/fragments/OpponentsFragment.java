@@ -35,6 +35,7 @@ import com.quickblox.videochat.webrtc.QBRTCTypes;
 import org.jivesoftware.smack.SmackException;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,14 @@ public class OpponentsFragment extends Fragment implements View.OnClickListener,
 
     public static OpponentsFragment getInstance() {
         return new OpponentsFragment();
+    }
+
+    @Override
+    public void onDetach() {
+        Log.d(TAG, "onDetach");
+
+        super.onDetach();
+
     }
 
     @Override

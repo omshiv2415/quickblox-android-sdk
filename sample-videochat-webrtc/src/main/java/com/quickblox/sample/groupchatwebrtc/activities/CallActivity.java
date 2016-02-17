@@ -100,31 +100,51 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
         initQBRTCClient();
         initWiFiManagerListener();
         ringtonePlayer = new RingtonePlayer(this, R.raw.beep);
-
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(mCallRequestReceiver,
-                new IntentFilter(Consts.NEW_CALL_NOTIFICATION));
     }
-
-    private BroadcastReceiver mCallRequestReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d("receiver", "Got message");
-
-            Intent startActivityIntent = new Intent(context, CallActivity.class);
-            startActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(startActivityIntent);
-        }
-    };
 
     @Override
     protected void onDestroy() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mCallRequestReceiver);
-
         opponentsList = null;
         OpponentsAdapter.i = 0;
 
+        Log.d(TAG, "onDestroy");
+
         super.onDestroy();
+    }
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        registerReceiver(wifiStateReceiver, intentFilter);
+    }
+
+    @Override
+    protected void onResume() {
+        isInFront = true;
+
+        if (currentSession == null) {
+            addOpponentsFragment();
+        }
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        isInFront = false;
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterReceiver(wifiStateReceiver);
+
+        Log.d(TAG, "onStop");
+        finish();
     }
 
     private void initQBRTCClient() {
@@ -232,38 +252,6 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     private void stopIncomeCallTimer() {
         Log.d(TAG, "stopIncomeCallTimer");
         showIncomingCallWindowTaskHandler.removeCallbacks(showIncomingCallWindowTask);
-    }
-
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        registerReceiver(wifiStateReceiver, intentFilter);
-    }
-
-    @Override
-    protected void onResume() {
-        isInFront = true;
-
-        if (currentSession == null) {
-            addOpponentsFragment();
-        }
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        isInFront = false;
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        unregisterReceiver(wifiStateReceiver);
     }
 
     public QBRTCSession getCurrentSession() {
@@ -516,10 +504,15 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     }
 
     public void addOpponentsFragment() {
-        FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container,  new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
+        Log.d(TAG, "addOpponentsFragment, isFinishing(): " + isFinishing());
+        if(!isFinishing()) {
+            FragmentExecutor.addFragment(getFragmentManager(), R.id.fragment_container, new OpponentsFragment(), OPPONENTS_CALL_FRAGMENT);
+        }
     }
 
     public void removeIncomeCallFragment() {
+        Log.d(TAG, "removeIncomeCallFragment");
+
         FragmentManager fragmentManager = getFragmentManager();
         Fragment fragment = fragmentManager.findFragmentByTag(INCOME_CALL_FRAGMENT);
 

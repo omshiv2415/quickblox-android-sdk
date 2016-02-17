@@ -3,6 +3,7 @@ package com.quickblox.sample.groupchatwebrtc.activities;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Chronometer;
@@ -19,6 +20,7 @@ import com.quickblox.users.model.QBUser;
  * QuickBlox team
  */
 public class BaseLogginedUserActivity extends Activity {
+    private static final String TAG = BaseLogginedUserActivity.class.getSimpleName();
 
     private static final String APP_VERSION = "App version";
     static android.app.ActionBar mActionBar;
@@ -76,6 +78,8 @@ public class BaseLogginedUserActivity extends Activity {
 
         timerABWithTimer = (Chronometer) mCustomView.findViewById(R.id.timerABWithTimer);
 
+        Log.d(TAG, "initActionBarWithTimer. timerABWithTimer == null: " + (timerABWithTimer == null));
+
         TextView loginAsABWithTimer = (TextView) mCustomView.findViewById(R.id.loginAsABWithTimer);
         loginAsABWithTimer.setText(R.string.logged_in_as);
 
@@ -90,7 +94,12 @@ public class BaseLogginedUserActivity extends Activity {
     }
 
     public void startTimer() {
+        Log.d(TAG, "startTimer. timerABWithTimer == null: " + (timerABWithTimer == null));
+
         if (!isStarted) {
+            if(timerABWithTimer == null) {
+                initActionBarWithTimer();
+            }
             timerABWithTimer.setBase(SystemClock.elapsedRealtime());
             timerABWithTimer.start();
             isStarted = true;

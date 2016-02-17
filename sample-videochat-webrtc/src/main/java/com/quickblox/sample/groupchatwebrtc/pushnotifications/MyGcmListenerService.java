@@ -85,12 +85,10 @@ public class MyGcmListenerService extends GcmListenerService {
     }
 
     private void showActivityOrNotification(String message){
-        if(Application.getInstance().getNumberOfCreatedActivities() == 0) {
+        if(Application.getInstance().getNumberOfActivitiesInForeground() == 0) {
             Intent intent = new Intent(this, LoginActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-        }else{
-            sendNotification(message);
         }
     }
 }

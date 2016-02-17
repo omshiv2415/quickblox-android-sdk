@@ -25,6 +25,7 @@ import com.quickblox.videochat.webrtc.QBRTCSessionDescription;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +53,15 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
     private View view;
     private long lastCliclTime = 0l;
     private RingtonePlayer ringtonePlayer;
+
+    @Override
+    public void onDetach() {
+        Log.d(TAG, "onDetach");
+
+        super.onDetach();
+
+
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

@@ -97,7 +97,7 @@ public class RegistrationIntentService extends IntentService {
         }
 
         try {
-            ArrayList<QBSubscription> qbSubscription = QBMessages.subscribeToPushNotificationsTask(token, deviceId, QBEnvironment.DEVELOPMENT);
+            QBMessages.subscribeToPushNotificationsTask(token, deviceId, QBEnvironment.DEVELOPMENT);
             Log.d(TAG, "push subscription success");
         } catch (QBResponseException e) {
             e.printStackTrace();

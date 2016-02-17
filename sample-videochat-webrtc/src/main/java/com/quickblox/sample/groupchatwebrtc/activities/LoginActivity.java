@@ -41,7 +41,7 @@ import io.fabric.sdk.android.Fabric;
  */
 public class LoginActivity extends Activity {
 
-    private static final String TAG = "ListUsersActivity";
+    private static final String TAG = LoginActivity.class.getSimpleName();
 
     private static final long ON_ITEM_CLICK_DELAY = TimeUnit.SECONDS.toMillis(10);
 
@@ -60,9 +60,7 @@ public class LoginActivity extends Activity {
 
         initUI();
 
-        // Initialise QuickBlox
-        //
-        QBSettings.getInstance().fastConfigInit(Consts.APP_ID, Consts.AUTH_KEY, Consts.AUTH_SECRET);
+        // Initialise Chat
         //
         QBChatService.setDebugEnabled(true);
         if (!QBChatService.isInitialized()) {
@@ -82,6 +80,22 @@ public class LoginActivity extends Activity {
         }else{
             createAppSession();
         }
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop");
+
+        finish();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        super.onDestroy();
     }
 
     private void createAppSession() {
@@ -92,17 +106,8 @@ public class LoginActivity extends Activity {
             public void onSuccess(QBSession qbSession, Bundle bundle) {
                 showProgress(false);
 
-                loadUsers(new QBEntityCallbackImpl<ArrayList<QBUser>>() {
-                    @Override
-                    public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
-
-                    }
-
-                    @Override
-                    public void onError(List list) {
-
-                    }
-                });
+                Log.d(TAG, "loading users");
+                loadUsers(null);
             }
 
             @Override
@@ -150,11 +155,15 @@ public class LoginActivity extends Activity {
             public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
                 showProgress(false);
 
+                Log.d(TAG, "load users done");
+
                 users.clear();
                 users.addAll(DataHolder.createUsersList(qbUsers));
                 initUsersList();
 
-                callback.onSuccess(qbUsers, bundle);
+                if(callback != null) {
+                    callback.onSuccess(qbUsers, bundle);
+                }
             }
 
             @Override
@@ -163,7 +172,9 @@ public class LoginActivity extends Activity {
 
                 Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
 
-                callback.onError(strings);
+                if(callback != null) {
+                    callback.onError(strings);
+                }
             }
         });
     }
@@ -189,10 +200,14 @@ public class LoginActivity extends Activity {
 
     private void createUserSession(final QBUser user, final boolean restoreSession) {
 
+        Log.d(TAG, "creating a session");
+
         showProgress(true);
 
         final String login = user.getLogin();
         final String password = user.getPassword();
+
+        Log.d(TAG, "creating a session2");
 
         QBAuth.createSession(login, password, new QBEntityCallbackImpl<QBSession>() {
             @Override

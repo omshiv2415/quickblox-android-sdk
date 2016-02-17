@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.quickblox.sample.groupchatwebrtc.fragments.SettingsFragment;
@@ -17,7 +18,7 @@ import com.quickblox.sample.groupchatwebrtc.R;
  * QuickBlox team
  */
 public class SettingsActivity extends Activity implements SharedPreferences.OnSharedPreferenceChangeListener {
-
+    private static final String TAG = SettingsActivity.class.getSimpleName();
 
     private static final int MAX_VIDEO_START_BITRATE = 2000;
     private String bitrateStringKey;
@@ -38,6 +39,21 @@ public class SettingsActivity extends Activity implements SharedPreferences.OnSh
                 .replace(android.R.id.content, settingsFragment)
                 .commit();
         bitrateStringKey = getString(R.string.pref_startbitratevalue_key);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop");
+
+        finish();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "onDestroy");
+        super.onDestroy();
     }
 
 
