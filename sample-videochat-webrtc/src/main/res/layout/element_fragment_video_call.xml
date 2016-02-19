@@ -18,7 +18,7 @@
         android:textOn=""
         android:background="@drawable/ic_toggle_bluetooth_audio"
         android:layout_gravity="center_vertical"
-        android:checked="true"
+        android:checked="false"
         />
 
     <ToggleButton
