@@ -37,7 +37,9 @@ public class Consts {
     public static final String EXTRA_SERVER_ERRORS = "serverErrors";
 
 
-    public static final String INSTANCES_WEB_RESOURCE = "http://status.quickblox.com/admin/push/instances";
+    public static final String INSTANCES_WEB_RESOURCE = "http://status.quickblox.com/admin/pushinstances";
+    public static final String INSTANCES_HEADER_KEY_PLATFORM = "platform";
+    public static final String INSTANCES_HEADER_VALUE_PLATFORM = "android";
     public static final String INSTANCES_TITLE = "title";
     public static final String INSTANCES_APP_ID = "appId";
     public static final String INSTANCES_AUTH_KEY = "authKey";
@@ -47,7 +49,7 @@ public class Consts {
     public static final String INSTANCES_USER_PASSWORD = "userPass";
     public static final String INSTANCES_SERVER_API_DOMAIN = "serverApiDomain";
 
-    public static final String REPORT_URL = "http://statuscopy.quickblox.com/admin/push/save";
+    public static final String REPORT_URL = "https://status.quickblox.com/admin/push/save";
     public static final String REPORT_PARAMETER_SERVER = "instance";
     public static final String REPORT_PARAMETER_PUSH_TIME = "time";
     public static final String REPORT_PARAMETER_PLATFORM = "platform";

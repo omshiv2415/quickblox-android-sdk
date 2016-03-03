@@ -89,6 +89,7 @@ public class SplashActivity extends Activity{
     public boolean loadServersData() {
         HttpClient client = new DefaultHttpClient();
         HttpGet request = new HttpGet(Consts.INSTANCES_WEB_RESOURCE);
+        request.addHeader(Consts.INSTANCES_HEADER_KEY_PLATFORM, Consts.INSTANCES_HEADER_VALUE_PLATFORM);
 
         try {
             HttpResponse response = client.execute(request);
