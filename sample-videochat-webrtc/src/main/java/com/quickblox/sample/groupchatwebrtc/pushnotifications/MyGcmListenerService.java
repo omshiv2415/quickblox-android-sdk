@@ -2,27 +2,28 @@ package com.quickblox.sample.groupchatwebrtc.pushnotifications;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.telecom.Call;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 import com.quickblox.sample.groupchatwebrtc.R;
-import com.quickblox.sample.groupchatwebrtc.activities.CallActivity;
 import com.quickblox.sample.groupchatwebrtc.activities.LoginActivity;
 import com.quickblox.sample.groupchatwebrtc.app.Application;
-import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
 
 public class MyGcmListenerService extends GcmListenerService {
 
     private static final String TAG = "MyGcmListenerService";
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "Service destoryed");
+        super.onDestroy();
+    }
 
     /**
      * Called when message is received.

@@ -58,7 +58,9 @@ public class ActivityLifecycleHandler implements Application.ActivityLifecycleCa
 
         if(numberOfActivitiesInForeground == 0){
             try {
-                QBChatService.getInstance().logout();
+                if(QBChatService.getInstance().isLoggedIn()) {
+                    QBChatService.getInstance().logout();
+                }
                 Log.d(TAG, "chat logout done");
             } catch (SmackException.NotConnectedException e) {
                 Log.d(TAG, "chat logout error:");

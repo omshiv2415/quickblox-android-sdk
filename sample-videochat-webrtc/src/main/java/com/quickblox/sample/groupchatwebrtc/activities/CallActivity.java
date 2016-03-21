@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.quickblox.chat.QBChatService;
 import com.quickblox.chat.QBSignaling;
+import com.quickblox.chat.QBVideoChatWebRTCSignalingManager;
 import com.quickblox.chat.QBWebRTCSignaling;
 import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
 import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
@@ -149,8 +150,11 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
 
     private void initQBRTCClient() {
         rtcClient = QBRTCClient.getInstance(this);
+
         // Add signalling manager
-        QBChatService.getInstance().getVideoChatWebRTCSignalingManager().addSignalingManagerListener(new QBVideoChatSignalingManagerListener() {
+        QBChatService chatService = QBChatService.getInstance();
+        QBVideoChatWebRTCSignalingManager sigManager = chatService.getVideoChatWebRTCSignalingManager();
+        sigManager.addSignalingManagerListener(new QBVideoChatSignalingManagerListener() {
             @Override
             public void signalingCreated(QBSignaling qbSignaling, boolean createdLocally) {
                 if (!createdLocally) {

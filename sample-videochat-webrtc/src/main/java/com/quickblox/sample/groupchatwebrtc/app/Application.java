@@ -1,7 +1,7 @@
 package com.quickblox.sample.groupchatwebrtc.app;
 
 import com.quickblox.core.QBSettings;
-import com.quickblox.sample.groupchatwebrtc.definitions.Consts;
+import com.quickblox.core.ServiceZone;
 
 /**
  * Created by igorkhomenko on 2/2/16.
@@ -26,9 +26,9 @@ public class Application extends android.app.Application {
         final String AUTH_KEY = "bLEDyOzwhexJRAm";
         final String AUTH_SECRET = "AJq7CBm-4VB5ErJ";
         //
-        QBSettings.getInstance().fastConfigInit(APP_ID, AUTH_KEY, AUTH_SECRET);
-        QBSettings.getInstance().setServerApiDomain("apitelvous.quickblox.com");
-        QBSettings.getInstance().setChatServerDomain("chattelvous.quickblox.com");
+        QBSettings.getInstance().init(this, APP_ID, AUTH_KEY, AUTH_SECRET);
+        QBSettings.getInstance().setEndpoints("apitelvous.quickblox.com", "chattelvous.quickblox.com", ServiceZone.PRODUCTION);
+        QBSettings.getInstance().setZone(ServiceZone.PRODUCTION);
 
         initApplication();
 

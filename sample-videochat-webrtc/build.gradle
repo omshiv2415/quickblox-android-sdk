@@ -1,4 +1,4 @@
-buildscript {
+    buildscript {
     repositories {
         maven { url 'https://maven.fabric.io/public' }
         jcenter()
@@ -57,8 +57,14 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile files(rootProject.core_jar_path, rootProject.chat_jar_path,
-            rootProject.videochat_webrtc_jar_path, rootProject.messages_jar_path)
+
+
+    compile "com.quickblox:quickblox-android-sdk-core:2.5.1@aar"
+    compile ("com.quickblox:quickblox-android-sdk-chat:2.5.1@aar") {
+        transitive=true
+    }
+    compile "com.quickblox:quickblox-android-sdk-videochat-webrtc:2.5.1@aar"
+    compile "com.quickblox:quickblox-android-sdk-messages:2.5.1@aar"
 
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:recyclerview-v7:23.1.1'

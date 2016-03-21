@@ -15,9 +15,10 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.quickblox.chat.QBChatService;
-import com.quickblox.core.QBEntityCallbackImpl;
+import com.quickblox.core.QBEntityCallback;
+import com.quickblox.core.exception.QBResponseException;
 import com.quickblox.core.helper.StringifyArrayList;
-import com.quickblox.messages.QBMessages;
+import com.quickblox.messages.QBPushNotifications;
 import com.quickblox.messages.model.QBEnvironment;
 import com.quickblox.messages.model.QBEvent;
 import com.quickblox.messages.model.QBNotificationType;
@@ -25,7 +26,6 @@ import com.quickblox.sample.groupchatwebrtc.activities.CallActivity;
 import com.quickblox.sample.groupchatwebrtc.adapters.OpponentsAdapter;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.holder.DataHolder;
-import com.quickblox.sample.groupchatwebrtc.managers.ResourcesManager;
 import com.quickblox.sample.groupchatwebrtc.managers.UserCredentialsStorageManager;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.QBRTCClient;
@@ -35,7 +35,6 @@ import com.quickblox.videochat.webrtc.QBRTCTypes;
 import org.jivesoftware.smack.SmackException;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -196,14 +195,14 @@ public class OpponentsFragment extends Fragment implements View.OnClickListener,
         event.setNotificationType(QBNotificationType.PUSH);
         event.setMessage(pushText);
 
-        QBMessages.createEvent(event, new QBEntityCallbackImpl<QBEvent>() {
+        QBPushNotifications.createEvent(event, new QBEntityCallback<QBEvent>() {
             @Override
             public void onSuccess(QBEvent qbEvent, Bundle args) {
                 // sent
             }
 
             @Override
-            public void onError(List<String> errors) {
+            public void onError(QBResponseException errors) {
                 Log.e(TAG, errors.toString());
             }
         });

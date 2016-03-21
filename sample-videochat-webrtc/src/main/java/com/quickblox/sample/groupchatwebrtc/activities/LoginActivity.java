@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -17,7 +18,7 @@ import com.quickblox.auth.model.QBSession;
 import com.quickblox.chat.QBChatService;
 import com.quickblox.core.QBEntityCallback;
 import com.quickblox.core.QBEntityCallbackImpl;
-import com.quickblox.core.QBSettings;
+import com.quickblox.core.exception.QBResponseException;
 import com.quickblox.core.request.QBPagedRequestBuilder;
 import com.quickblox.sample.groupchatwebrtc.R;
 import com.quickblox.sample.groupchatwebrtc.adapters.UsersAdapter;
@@ -63,10 +64,7 @@ public class LoginActivity extends Activity {
         // Initialise Chat
         //
         QBChatService.setDebugEnabled(true);
-        if (!QBChatService.isInitialized()) {
-            QBChatService.init(this);
-            chatService = QBChatService.getInstance();
-        }
+        chatService = QBChatService.getInstance();
 
         // check if a user already logged in
         //
@@ -91,17 +89,28 @@ public class LoginActivity extends Activity {
         finish();
     }
 
-
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy");
         super.onDestroy();
     }
 
+    @Override
+    public void onAttachedToWindow() {
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+    }
+
     private void createAppSession() {
         showProgress(true);
 
-        QBAuth.createSession(new QBEntityCallbackImpl<QBSession>() {
+        QBAuth.createSession(new QBEntityCallback<QBSession>() {
             @Override
             public void onSuccess(QBSession qbSession, Bundle bundle) {
                 showProgress(false);
@@ -111,7 +120,7 @@ public class LoginActivity extends Activity {
             }
 
             @Override
-            public void onError(List<String> list) {
+            public void onError(QBResponseException list) {
                 Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
                 showProgress(false);
             }
@@ -167,7 +176,7 @@ public class LoginActivity extends Activity {
             }
 
             @Override
-            public void onError(List<String> strings) {
+            public void onError(QBResponseException strings) {
                 showProgress(false);
 
                 Toast.makeText(LoginActivity.this, "Error while loading users", Toast.LENGTH_SHORT).show();
@@ -220,10 +229,10 @@ public class LoginActivity extends Activity {
 
                 subscribeToPushNotifications();
 
-                chatService.login(user, new QBEntityCallbackImpl<QBUser>() {
+                chatService.login(user, new QBEntityCallback<Void>() {
 
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(Void result, Bundle bundle) {
                         Log.d(TAG, "onSuccess login to chat");
 
                         LoginActivity.this.runOnUiThread(new Runnable() {
@@ -243,7 +252,7 @@ public class LoginActivity extends Activity {
                                         }
 
                                         @Override
-                                        public void onError(List list) {
+                                        public void onError(QBResponseException list) {
 
                                         }
                                     });
@@ -256,7 +265,7 @@ public class LoginActivity extends Activity {
                     }
 
                     @Override
-                    public void onError(List errors) {
+                    public void onError(QBResponseException errors) {
                         showProgress(false);
                         Toast.makeText(LoginActivity.this, "Error when login", Toast.LENGTH_SHORT).show();
                     }
@@ -264,7 +273,7 @@ public class LoginActivity extends Activity {
             }
 
             @Override
-            public void onError(List<String> errors) {
+            public void onError(QBResponseException errors) {
                 showProgress(false);
                 Toast.makeText(LoginActivity.this, "Error when login, check test users login and password", Toast.LENGTH_SHORT).show();
             }
