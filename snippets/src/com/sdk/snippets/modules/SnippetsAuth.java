@@ -19,6 +19,8 @@ import com.sdk.snippets.core.AsyncSnippet;
 import com.sdk.snippets.core.Snippet;
 import com.sdk.snippets.core.Snippets;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -45,6 +47,7 @@ public class SnippetsAuth extends Snippets{
         //
         snippets.add(getSession);
         snippets.add(getSessionSynchronous);
+
     }
 
 
