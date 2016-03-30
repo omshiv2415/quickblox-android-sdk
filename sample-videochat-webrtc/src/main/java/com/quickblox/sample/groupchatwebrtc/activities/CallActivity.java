@@ -206,6 +206,8 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
             wifiEnabled = wifi.isWifiEnabled();
             showToast("Wifi " + (wifiEnabled ? "enabled" : "disabled"));
         }
+
+        Log.d(TAG, "wifiEnabled: " + wifiEnabled);
     }
 
     private void disableConversationFragmentButtons() {

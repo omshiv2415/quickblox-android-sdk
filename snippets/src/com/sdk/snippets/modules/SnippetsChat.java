@@ -565,7 +565,7 @@ public class SnippetsChat extends Snippets {
         privateChatMessageListener = new QBMessageListener<QBPrivateChat>() {
             @Override
             public void processMessage(QBPrivateChat privateChat, final QBChatMessage chatMessage) {
-                log("received message: " + chatMessage + " from user: " + privateChat.getParticipant() + ", dialogId: " + privateChat.getDialogId());
+                log("received message: " + chatMessage.getId() + " dateSent: " + chatMessage.getDateSent());
 
                 if(chatMessage.getSenderId().equals(chatService.getUser().getId())){
                     log("Message comes here from carbons");
