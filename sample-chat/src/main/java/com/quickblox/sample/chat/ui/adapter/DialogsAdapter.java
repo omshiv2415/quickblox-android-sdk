@@ -10,7 +10,7 @@ import android.widget.TextView;
 import com.quickblox.chat.model.QBDialog;
 import com.quickblox.chat.model.QBDialogType;
 import com.quickblox.sample.chat.R;
-import com.quickblox.sample.chat.utils.UiUtils;
+import com.quickblox.sample.core.utils.UiUtils;
 import com.quickblox.sample.chat.utils.qb.QbDialogUtils;
 import com.quickblox.sample.core.ui.adapter.BaseSelectableListAdapter;
 import com.quickblox.sample.core.utils.ResourceUtils;

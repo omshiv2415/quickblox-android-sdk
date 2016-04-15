@@ -75,7 +75,6 @@ public class LoginActivity extends BaseLogginedUserActivity {
             chatRoomNameEditText.setError("Chat room name can not be empty");
             return super.onOptionsItemSelected(item);
         }
-
         //TODO end
 
         switch (item.getItemId()) {

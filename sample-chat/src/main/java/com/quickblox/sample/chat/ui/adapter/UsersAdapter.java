@@ -9,7 +9,7 @@ import android.widget.TextView;
 
 import com.quickblox.sample.chat.R;
 import com.quickblox.sample.chat.utils.SharedPreferencesUtil;
-import com.quickblox.sample.chat.utils.UiUtils;
+import com.quickblox.sample.core.utils.UiUtils;
 import com.quickblox.sample.core.ui.adapter.BaseListAdapter;
 import com.quickblox.sample.core.utils.ResourceUtils;
 import com.quickblox.users.model.QBUser;

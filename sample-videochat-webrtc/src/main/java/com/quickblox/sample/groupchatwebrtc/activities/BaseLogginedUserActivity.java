@@ -1,6 +1,5 @@
 package com.quickblox.sample.groupchatwebrtc.activities;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.SystemClock;
 import android.support.v7.app.ActionBar;

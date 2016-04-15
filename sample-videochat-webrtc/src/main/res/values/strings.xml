@@ -83,6 +83,21 @@
     <color name="background_chat_color">#f5f6f5</color>
     <color name="blue_accent">#0088e7</color>
 
+    <color name="button_light_gray_normal">#f2f2f2</color>
+    <color name="button_light_gray_pressed">#e2e2e2</color>
+    <color name="button_green_normal">#00bf28</color>
+    <color name="button_green_pressed">#00c028</color>
+
+    <color name="button_end_call_normal">#ff2744</color>
+    <color name="button_end_call_pressed">#FC5876</color>
+    <color name="toggle_button_background_normal">#cc212121</color>
+    <color name="toggle_button_background_checked">#ccffffff</color>
+    <color name="call_type_text_color">#6e6e6e</color>
+    <color name="also_on_coll_text_color">@color/call_type_text_color</color>
+    <color name="other_inc_users_text_color">#1f1f1f</color>
+    <color name="caller_name_text_color">#1f1f1f</color>
+
+
     <!-- Settings strings. -->
     <string name="pref_default_value">Default</string>
 

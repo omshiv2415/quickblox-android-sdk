@@ -97,9 +97,7 @@ public class ChatHelper {
             return;
         }
 
-        qbChatService.startAutoSendPresence();
         qbChatService.login(user, new QbEntityCallbackWrapper<>(callback));
-        //TODO add qbChatService.startAutoSendPresence() to keep permanent connection.
     }
 
     public boolean logout() {
