@@ -53,18 +53,18 @@ public class OpponentsManager {
         return qbUsers;
     }
 
-    public static String getUserNameByID(Integer callerID) {
+    public static String getUserNameByID(Integer userId) {
         for (QBUser user : getCurrentUsersList()) {
-            if (user.getId().equals(callerID)) {
+            if (user.getId().equals(userId)) {
                 return user.getFullName();
             }
         }
-        return callerID.toString();
+        return userId.toString();
     }
 
-    public static int getUserIndexByID(Integer callerID) {
+    public static int getUserIndexByID(Integer userId) {
         for (QBUser user : getCurrentUsersList()) {
-            if (user.getId().equals(callerID)) {
+            if (user.getId().equals(userId)) {
                 return currentUsersList.indexOf(user);
             }
         }

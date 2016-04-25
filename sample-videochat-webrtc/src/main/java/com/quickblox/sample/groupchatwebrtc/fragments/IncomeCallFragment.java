@@ -109,7 +109,9 @@ public class IncomeCallFragment extends Fragment implements Serializable, View.O
         callerName.setText(OpponentsManager.getUserNameByID(callerId));
 
         callerAvatar = (ImageView) view.findViewById(R.id.caller_avatar);
-        callerAvatar.setBackgroundDrawable(UiUtils.getColorCircleDrawable(OpponentsManager.getUserIndexByID(callerId)));
+        callerAvatar.setBackgroundDrawable(OpponentsManager.getUserIndexByID(callerId) != -1
+                ? UiUtils.getColorCircleDrawable(OpponentsManager.getUserIndexByID(callerId))
+                :  UiUtils.getRandomColorCircleDrawable());
         callerAvatar.setImageResource(R.drawable.ic_person_big);
 
         otherIncUsers = (TextView) view.findViewById(R.id.other_inc_users);

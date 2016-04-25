@@ -1,5 +1,6 @@
 package com.quickblox.sample.groupchatwebrtc.activities;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
@@ -85,6 +86,14 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     private boolean wifiEnabled = true;
     private SharedPreferences sharedPref;
     private RingtonePlayer ringtonePlayer;
+
+    public static void start(Context context, Consts.CALL_DIRECTION_TYPE callDirectionType) {
+        Intent intent = new Intent();
+        intent.putExtra(Consts.EXTRA_CALLDIRECTION_TYPE, callDirectionType);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -640,6 +649,7 @@ public class CallActivity extends BaseLogginedUserActivity implements QBRTCClien
     public void onErrorSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer userId, QBRTCSignalException e) {
         showToast(R.string.dlg_signal_error);
     }
+
 
     public static enum StartConversetionReason {
         INCOME_CALL_FOR_ACCEPTION,
