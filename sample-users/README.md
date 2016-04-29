@@ -16,5 +16,3 @@ It shows how to:
 Go to project page on QuickBlox Developers Section -- <http://quickblox.com/developers/SimpleSample-users-android>
 
 Or clone project here and start to work with the code.
-
-<img src="http://files.quickblox.com/Sample_Users_2.png" width=200 />&nbsp;<img src="http://files.quickblox.com/Sample_Users_3.png" width=200 />&nbsp;<img src="http://files.quickblox.com/Sample_Users_4.png" width=200 />&nbsp;
